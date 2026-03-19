@@ -85,7 +85,7 @@ fn HomePage() -> impl IntoView {
                 "朴素的启程：写在个人网站上线之前"
             </h2>
             <div class="text-gray-400 text-sm mb-8 border-b pb-4">
-                "发布时间：2024年5月" // 可以写今天的日期
+                "发布时间：2026年3月"
             </div>
 
             // 正文内容，简单排版
