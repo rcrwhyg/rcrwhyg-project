@@ -1,0 +1,35 @@
+# Caddy v2.x — rcrwhyg reverse proxy
+# Replace <DOMAIN> with the real apex (e.g. rcrwhyg.cn) before enabling.
+# Caddy auto-issues via Let's Encrypt. For Aliyun CAS, see docs/deploy-vps.md.
+
+{
+    email ops@<DOMAIN>
+    admin off
+}
+
+<DOMAIN> {
+    encode zstd gzip
+    reverse_proxy 127.0.0.1:3000 {
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        transport http {
+            dial_timeout 5s
+            response_header_timeout 30s
+        }
+    }
+
+    header {
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "interest-cohort=()"
+        -Server
+    }
+
+    log {
+        output stdout
+        format console
+    }
+}

@@ -1,0 +1,124 @@
+name: CD
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual deploy (recorded in deploy log)'
+        required: false
+        default: 'manual'
+
+concurrency:
+  group: prod-deploy
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  LEPTOS_OUTPUT_NAME: rcrwhyg-server
+  RUSTFLAGS: '-C strip=symbols'
+
+jobs:
+  deploy-production:
+    name: Deploy to Aliyun ECS (prod)
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 30
+    steps:
+      - name: Record deploy metadata
+        id: meta
+        run: |
+          echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          echo "sha=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          echo "actor=${GITHUB_ACTOR}" >> "$GITHUB_OUTPUT"
+          echo "run_id=${GITHUB_RUN_ID}" >> "$GITHUB_OUTPUT"
+          echo "reason=${{ github.event.inputs.reason || 'tag-push' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust toolchain (stable + wasm + musl + rustfmt)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown,x86_64-unknown-linux-musl
+          components: rustfmt
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-leptos
+        run: cargo install --locked cargo-leptos
+
+      - name: Install cargo-zigbuild
+        run: cargo install --locked cargo-zigbuild
+
+      - name: Build site (WASM + CSS)
+        run: cargo leptos build --release
+
+      - name: Build static musl server
+        run: cargo zigbuild --release --target x86_64-unknown-linux-musl --features ssr --bin rcrwhyg-server
+
+      - name: Upload deploy script
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: deploy/remote.sh
+          target: /opt/rcrwhyg/bin/remote.sh.new
+          command: install -m 0755 /opt/rcrwhyg/bin/remote.sh.new /opt/rcrwhyg/bin/remote.sh
+
+      - name: Stop service before swap
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command: |
+            sudo -n systemctl stop rcrwhyg.service || true
+            sleep 2
+
+      - name: Upload new binary
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: target/x86_64-unknown-linux-musl/release/rcrwhyg-server
+          target: /opt/rcrwhyg/rcrwhyg-server.new
+
+      - name: Upload new site dir
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: target/site/
+          target: /opt/rcrwhyg/site.staging/
+          rm: true
+
+      - name: Atomic swap + start + smoke + finalize
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command: |
+            set -euo pipefail
+            bash /opt/rcrwhyg/bin/remote.sh swap
+            sudo -n systemctl start rcrwhyg.service
+            bash /opt/rcrwhyg/bin/remote.sh smoke
+            bash /opt/rcrwhyg/bin/remote.sh finalize \
+              "${{ steps.meta.outputs.tag }}" \
+              "${{ steps.meta.outputs.sha }}" \
+              "${{ steps.meta.outputs.actor }}" \
+              "${{ steps.meta.outputs.reason }}"
