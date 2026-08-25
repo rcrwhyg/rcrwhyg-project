@@ -1,10 +1,9 @@
 //! Argon2id password hashing (pattern from chat project; solo-admin only).
 
-use argon2::password_hash::{
-    PasswordHash, PasswordHasher, PasswordVerifier, SaltString,
-    rand_core::OsRng,
-};
 use argon2::Argon2;
+use argon2::password_hash::{
+    PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng,
+};
 
 pub fn hash_password(password: &str) -> Result<String, String> {
     let salt = SaltString::generate(&mut OsRng);

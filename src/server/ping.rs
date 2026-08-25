@@ -17,7 +17,10 @@ pub async fn db_status() -> Result<String, ServerFnError> {
     {
         match use_context::<sqlx::PgPool>() {
             Some(pool) => {
-                match sqlx::query_scalar::<_, i32>("SELECT 1").fetch_one(&pool).await {
+                match sqlx::query_scalar::<_, i32>("SELECT 1")
+                    .fetch_one(&pool)
+                    .await
+                {
                     Ok(n) => Ok(format!("postgres ok (select {n})")),
                     Err(err) => Err(ServerFnError::new(format!("postgres query failed: {err}"))),
                 }

@@ -10,7 +10,11 @@ use tokio_stream::wrappers::IntervalStream;
 pub async fn sse_heartbeat() -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
     let stream = IntervalStream::new(tokio::time::interval(Duration::from_secs(2)))
         .enumerate()
-        .map(|(i, _)| Ok(Event::default().event("heartbeat").data(format!("tick-{i}"))));
+        .map(|(i, _)| {
+            Ok(Event::default()
+                .event("heartbeat")
+                .data(format!("tick-{i}")))
+        });
 
     Sse::new(stream).keep_alive(
         KeepAlive::new()

@@ -1,7 +1,7 @@
 use leptos::prelude::*;
+use leptos_router::NavigateOptions;
 use leptos_router::components::A;
 use leptos_router::hooks::{use_navigate, use_params_map};
-use leptos_router::NavigateOptions;
 
 use crate::domain::{Post, PostInput};
 use crate::server::{
@@ -143,12 +143,7 @@ pub fn AdminPostNewPage() -> impl IntoView {
 #[component]
 pub fn AdminPostEditPage() -> impl IntoView {
     let params = use_params_map();
-    let id = Memo::new(move |_| {
-        params
-            .get()
-            .get("id")
-            .and_then(|v| v.parse::<i64>().ok())
-    });
+    let id = Memo::new(move |_| params.get().get("id").and_then(|v| v.parse::<i64>().ok()));
 
     view! {
         {move || match id.get() {
@@ -202,20 +197,12 @@ fn AdminPostEditor(mode: EditorMode) -> impl IntoView {
             return;
         }
         if let Some(Ok(Some(post))) = existing.get() {
-            fill_form(
-                &post,
-                title,
-                slug,
-                summary,
-                body,
-                tags,
-                publish,
-            );
+            fill_form(&post, title, slug, summary, body, tags, publish);
             loaded.set(true);
-        } else if matches!(mode, EditorMode::Create) {
-            if let Some(Ok(None)) = existing.get() {
-                loaded.set(true);
-            }
+        } else if matches!(mode, EditorMode::Create)
+            && let Some(Ok(None)) = existing.get()
+        {
+            loaded.set(true);
         }
     });
 
@@ -392,8 +379,6 @@ fn slugify_hint(title: &str) -> String {
         .map(|c| {
             if c.is_ascii_alphanumeric() {
                 c.to_ascii_lowercase()
-            } else if c.is_whitespace() || c == '-' || c == '_' {
-                '-'
             } else {
                 '-'
             }

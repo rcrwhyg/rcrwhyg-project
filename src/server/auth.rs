@@ -10,10 +10,7 @@ pub async fn admin_bootstrap_status() -> Result<AdminBootstrap, ServerFnError> {
         use super::session::{admin_from_session_token, count_admins};
 
         let pool = require_pool()?;
-        let has_admin = count_admins(&pool)
-            .await
-            .map_err(ServerFnError::new)?
-            > 0;
+        let has_admin = count_admins(&pool).await.map_err(ServerFnError::new)? > 0;
         let token = read_session_token().await;
         let admin = match token.as_deref() {
             Some(raw) => admin_from_session_token(&pool, raw)
@@ -93,10 +90,10 @@ pub async fn admin_logout() -> Result<(), ServerFnError> {
         use super::auth_http::{append_set_cookie, read_session_token};
         use super::session::{clear_session_cookie, delete_session_by_token};
 
-        if let Some(pool) = use_context::<sqlx::PgPool>() {
-            if let Some(token) = read_session_token().await {
-                let _ = delete_session_by_token(&pool, &token).await;
-            }
+        if let Some(pool) = use_context::<sqlx::PgPool>()
+            && let Some(token) = read_session_token().await
+        {
+            let _ = delete_session_by_token(&pool, &token).await;
         }
         let cookie = clear_session_cookie();
         append_set_cookie(

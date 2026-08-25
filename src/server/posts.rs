@@ -1,8 +1,8 @@
 use leptos::prelude::*;
 
-use crate::domain::{Post, PostDetail, PostInput, PostSummary};
 #[cfg(feature = "ssr")]
 use crate::domain::seed_posts;
+use crate::domain::{Post, PostDetail, PostInput, PostSummary};
 
 /// Published posts for the blog index (DB when available, else seed).
 #[server(ListPublishedPosts)]
@@ -18,7 +18,7 @@ pub async fn list_published_posts() -> Result<Vec<PostSummary>, ServerFnError> {
                 leptos::logging::log!("list_published_posts db error: {err}; falling back to seed");
             }
         }
-        return Ok(seed_posts().iter().map(PostSummary::from).collect());
+        Ok(seed_posts().iter().map(PostSummary::from).collect())
     }
     #[cfg(not(feature = "ssr"))]
     {
@@ -289,10 +289,7 @@ pub(crate) async fn fetch_all_posts(pool: &sqlx::PgPool) -> Result<Vec<Post>, St
 }
 
 #[cfg(feature = "ssr")]
-pub(crate) async fn fetch_post_by_id(
-    pool: &sqlx::PgPool,
-    id: i64,
-) -> Result<Option<Post>, String> {
+pub(crate) async fn fetch_post_by_id(pool: &sqlx::PgPool, id: i64) -> Result<Option<Post>, String> {
     #[derive(sqlx::FromRow)]
     struct Row {
         id: i64,

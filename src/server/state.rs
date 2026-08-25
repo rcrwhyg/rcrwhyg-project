@@ -19,10 +19,7 @@ impl FromRef<AppState> for LeptosOptions {
 impl AppState {
     pub async fn new(leptos_options: LeptosOptions) -> Self {
         let db = connect_optional_pool().await;
-        Self {
-            leptos_options,
-            db,
-        }
+        Self { leptos_options, db }
     }
 
     pub fn provide_leptos_context(&self) {
@@ -38,11 +35,7 @@ async fn connect_optional_pool() -> Option<PgPool> {
         return None;
     };
 
-    match PgPoolOptions::new()
-        .max_connections(5)
-        .connect(&url)
-        .await
-    {
+    match PgPoolOptions::new().max_connections(5).connect(&url).await {
         Ok(pool) => {
             leptos::logging::log!("Postgres pool ready");
             Some(pool)

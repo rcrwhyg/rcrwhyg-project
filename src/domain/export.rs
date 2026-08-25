@@ -117,9 +117,7 @@ impl ContentImporter for MarkdownImporter {
             return Err(ImportError::MissingFrontmatter);
         }
         let rest = &raw[3..];
-        let end = rest
-            .find("\n---")
-            .ok_or(ImportError::MissingFrontmatter)?;
+        let end = rest.find("\n---").ok_or(ImportError::MissingFrontmatter)?;
         let fm = &rest[..end];
         let body = rest[end + 4..].trim_start_matches('\n').to_string();
 
@@ -185,9 +183,7 @@ mod tests {
             .export_post(&post)
             .expect("export")
             .to_markdown();
-        let imported = MarkdownImporter
-            .import_markdown(&exported)
-            .expect("import");
+        let imported = MarkdownImporter.import_markdown(&exported).expect("import");
         assert_eq!(imported.frontmatter_slug, "hello");
         assert_eq!(imported.body_markdown, "body text");
     }

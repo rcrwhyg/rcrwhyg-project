@@ -17,7 +17,9 @@ async fn main() -> ExitCode {
     let mut args = env::args().skip(1).collect::<Vec<_>>();
     if args.len() != 2 {
         eprintln!("用法: create-admin <email> <password>");
-        eprintln!("示例: cargo run --features ssr --bin create-admin -- you@example.com 'long-password'");
+        eprintln!(
+            "示例: cargo run --features ssr --bin create-admin -- you@example.com 'long-password'"
+        );
         return ExitCode::from(2);
     }
 

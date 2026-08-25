@@ -15,9 +15,8 @@ pub struct ClientMeta {
 }
 
 pub fn require_pool() -> Result<PgPool, ServerFnError> {
-    use_context::<PgPool>().ok_or_else(|| {
-        ServerFnError::new("数据库未连接：请配置 DATABASE_URL 并执行 sql/auth.sql")
-    })
+    use_context::<PgPool>()
+        .ok_or_else(|| ServerFnError::new("数据库未连接：请配置 DATABASE_URL 并执行 sql/auth.sql"))
 }
 
 pub async fn client_meta() -> ClientMeta {

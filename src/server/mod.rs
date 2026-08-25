@@ -1,6 +1,6 @@
+mod auth;
 mod ping;
 mod posts;
-mod auth;
 
 pub use auth::{admin_bootstrap_status, admin_login, admin_logout, require_admin};
 pub use ping::{db_status, server_ping};

@@ -1,7 +1,7 @@
 use leptos::prelude::*;
+use leptos_router::NavigateOptions;
 use leptos_router::components::{A, Redirect};
 use leptos_router::hooks::use_navigate;
-use leptos_router::NavigateOptions;
 
 use crate::app::{clear_admin_session, set_logged_in_admin, use_admin_session};
 use crate::domain::AdminPublic;

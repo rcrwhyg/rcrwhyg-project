@@ -19,11 +19,7 @@ pub async fn shared_pool() -> Option<&'static PgPool> {
             let Ok(url) = std::env::var("DATABASE_URL") else {
                 return None;
             };
-            match PgPoolOptions::new()
-                .max_connections(3)
-                .connect(&url)
-                .await
-            {
+            match PgPoolOptions::new().max_connections(3).connect(&url).await {
                 Ok(pool) => Some(Arc::new(pool)),
                 Err(err) => {
                     eprintln!("test shared_pool connect failed: {err}");

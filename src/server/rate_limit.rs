@@ -55,15 +55,12 @@ fn shared_state() -> &'static RateLimitState {
 }
 
 pub fn client_ip(headers: &HeaderMap, peer: Option<SocketAddr>) -> String {
-    if let Some(fwd) = headers
-        .get("x-forwarded-for")
-        .and_then(|v| v.to_str().ok())
+    if let Some(fwd) = headers.get("x-forwarded-for").and_then(|v| v.to_str().ok())
+        && let Some(first) = fwd.split(',').next()
     {
-        if let Some(first) = fwd.split(',').next() {
-            let trimmed = first.trim();
-            if !trimmed.is_empty() {
-                return trimmed.to_string();
-            }
+        let trimmed = first.trim();
+        if !trimmed.is_empty() {
+            return trimmed.to_string();
         }
     }
     if let Some(real) = headers.get("x-real-ip").and_then(|v| v.to_str().ok()) {
@@ -89,11 +86,7 @@ pub async fn global_rate_limit_middleware(
     let state = shared_state();
     let ip = client_ip(req.headers(), Some(addr));
     if state.global.check_key(&ip).is_err() {
-        return (
-            StatusCode::TOO_MANY_REQUESTS,
-            "请求过于频繁，请稍后再试。",
-        )
-            .into_response();
+        return (StatusCode::TOO_MANY_REQUESTS, "请求过于频繁，请稍后再试。").into_response();
     }
 
     let is_auth_hot = path.contains("admin_login") || path.ends_with("/admin/login");

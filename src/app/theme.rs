@@ -62,8 +62,7 @@ pub struct SitePreference {
 }
 
 pub fn provide_site_preference() {
-    let (theme, set_theme, _) =
-        use_local_storage::<ThemeMode, FromToStringCodec>("rcrwhyg.theme");
+    let (theme, set_theme, _) = use_local_storage::<ThemeMode, FromToStringCodec>("rcrwhyg.theme");
 
     let thaw_theme = RwSignal::new(theme.get_untracked().to_thaw());
 

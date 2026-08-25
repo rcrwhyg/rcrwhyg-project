@@ -22,7 +22,10 @@ pub enum DbHealth {
 pub async fn health(State(state): State<AppState>) -> Json<HealthResponse> {
     let db = match &state.db {
         None => DbHealth::Unset,
-        Some(pool) => match sqlx::query_scalar::<_, i32>("SELECT 1").fetch_one(pool).await {
+        Some(pool) => match sqlx::query_scalar::<_, i32>("SELECT 1")
+            .fetch_one(pool)
+            .await
+        {
             Ok(_) => DbHealth::Connected,
             Err(_) => DbHealth::Error,
         },
