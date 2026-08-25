@@ -1,6 +1,7 @@
 # 如春日午后阳光
 
 [![CI](https://github.com/rcrwhyg/rcrwhyg-project/actions/workflows/ci.yml/badge.svg)](https://github.com/rcrwhyg/rcrwhyg-project/actions/workflows/ci.yml)
+[![CD](https://github.com/rcrwhyg/rcrwhyg-project/actions/workflows/cd.yml/badge.svg)](https://github.com/rcrwhyg/rcrwhyg-project/actions/workflows/cd.yml)
 
 Personal site: Leptos 0.8 SSR-first + Axum (HTTP / planned WS+SSE) + Tailwind. Extreme cyberpunk UI with dark/light themes and a dynamic mouse-follow backdrop. Production server: **static musl** via **cargo-zigbuild**.
 
@@ -43,6 +44,25 @@ cargo zigbuild --release --target x86_64-unknown-linux-musl --features ssr --bin
 ```
 
 Deploy the musl binary + `target/site`. Details in [docs/build-musl.md](docs/build-musl.md).
+
+## Deploy
+
+Production deploy is automated via GitHub Actions. Tag and push:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The CD workflow builds the musl binary + site assets, streams them to the
+Aliyun ECS instance, atomically swaps files, restarts the systemd unit,
+and smoke-tests `/health`. Required: GitHub Secrets `VPS_HOST`,
+`VPS_USER`, `VPS_PORT`, `VPS_SSH_KEY` and a `production` environment with
+yourself as required reviewer.
+
+- Workflow: [`.github/workflows/cd.yml`](.github/workflows/cd.yml)
+- VPS bootstrap runbook: [`docs/deploy-vps.md`](docs/deploy-vps.md)
+- Deploy assets: [`deploy/`](deploy/)
 
 ## Agent skills
 
