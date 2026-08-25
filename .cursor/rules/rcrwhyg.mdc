@@ -19,3 +19,6 @@ globs:
 - Production server artifact is static **musl** via **cargo-zigbuild**; prefer musl-friendly deps (`rustls`).
 - Follow ADRs in `docs/adr/` for stack, areas, ecosystem, realtime, build, and publishing changes.
 - Testing: follow [docs/testing.md](../../docs/testing.md). Prefer adding unit/DB tests with new server/domain logic; never commit secrets.
+- Quality gates are mandatory: `hooks/pre-commit` + `hooks/pre-push` (fmt / clippy `-D warnings` / tests / wasm check / article lint); local full pass = `./tools/test-local.sh`; remote CI must be green after push. See [docs/quality-gates.md](../../docs/quality-gates.md).
+- AI collaboration contract: [AGENT.md](../../AGENT.md). Stay within this repo; ask before any out-of-repo or outward-facing action.
+- WeChat articles live in `articles/` (channel drafts); site essays' source of truth remains `posts`. Workflow: [rules/content-quality.md](../../rules/content-quality.md), template [specs/article-template.md](../../specs/article-template.md).

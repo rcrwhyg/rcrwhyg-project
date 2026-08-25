@@ -5,10 +5,26 @@ Personal site: Leptos 0.8 SSR-first + Axum (HTTP / planned WS+SSE) + Tailwind. E
 ## Docs
 
 - [Architecture](docs/architecture.md)
+- [Quality gates](docs/quality-gates.md)（代码 + 文章双重门禁）
 - [Testing](docs/testing.md)
 - [ADRs](docs/adr/)
 - [musl / zigbuild release](docs/build-musl.md)
 - Env template: [`.env.example`](.env.example)
+
+## AI 协作与规范
+
+- 总纲：[AGENT.md](AGENT.md)（权限边界、工作流、门禁纪律）
+- 规则：[rules/](rules/)（git 工作流、代码质量、文章质量）
+- 文章规范：[specs/article-template.md](specs/article-template.md)、公众号文章目录 [articles/](articles/)
+
+## 质量门禁
+
+```bash
+./tools/install-hooks.sh   # 首次克隆后安装 git 钩子
+./tools/test-local.sh      # 本地全量门禁：fmt + clippy(-D) + test + wasm + 文章检查
+```
+
+推送后远程 CI（云效 Flow / GitHub Actions）须全绿，见 [docs/quality-gates.md](docs/quality-gates.md)。
 
 ## Develop
 

@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  quality-gates:
+    name: Code & Article Quality Gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain (stable + wasm + clippy + rustfmt)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+          components: clippy, rustfmt
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: "[1/5] cargo fmt --all --check"
+        run: cargo fmt --all --check
+
+      - name: "[2/5] cargo clippy (ssr, -D warnings)"
+        run: cargo clippy --features ssr --all-targets -- -D warnings
+
+      - name: "[3/5] cargo test (ssr)"
+        run: cargo test --features ssr
+        env:
+          # 无数据库：DB 集成用例按软门控自动跳过（见 docs/testing.md）
+          RUST_LOG: info
+
+      - name: "[4/5] cargo check (hydrate, wasm32)"
+        run: cargo check --lib --features hydrate --target wasm32-unknown-unknown
+
+      - name: "[5/5] Article static gates"
+        run: bash tools/check-articles.sh

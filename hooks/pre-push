@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# rcrwhyg Git pre-push 钩子（完整质量门禁）
+# 与远程 CI 保持一致：格式 / clippy / 测试 / wasm 编译 / 文章静态检查
+# 安装：./tools/install-hooks.sh
+# 紧急跳过（不推荐）：git push --no-verify
+
+set -e
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+echo ""
+echo "=========================================="
+echo "Git Pre-Push 钩子 - 质量门禁"
+echo "=========================================="
+echo ""
+
+step() { echo -e "${BLUE}[STEP]${NC} $1"; }
+ok()   { echo -e "${GREEN}[OK]${NC} $1"; }
+fail() { echo -e "${RED}[FAIL]${NC} $1"; exit 1; }
+
+# ---------- 1. 格式 ----------
+step "cargo fmt --all --check"
+cargo fmt --all --check || fail "格式检查未通过，运行 'cargo fmt --all'"
+ok "格式"
+
+# ---------- 2. clippy（ssr + 全部 target，警告即错误） ----------
+step "cargo clippy --features ssr --all-targets -- -D warnings"
+cargo clippy --features ssr --all-targets -- -D warnings \
+    || fail "clippy 存在警告，请先修复"
+ok "clippy(ssr)"
+
+# ---------- 3. 单元测试 ----------
+step "cargo test --features ssr"
+cargo test --features ssr || fail "单元测试未通过"
+ok "测试"
+
+# ---------- 4. wasm 编译检查（hydrate lib） ----------
+if rustup target list --installed 2>/dev/null | grep -q wasm32-unknown-unknown; then
+    step "cargo check --lib --features hydrate --target wasm32-unknown-unknown"
+    cargo check --lib --features hydrate --target wasm32-unknown-unknown \
+        || fail "wasm(hydrate) 编译未通过"
+    ok "wasm 编译"
+else
+    echo -e "${YELLOW}[SKIP]${NC} 未安装 wasm32-unknown-unknown target，跳过 wasm 检查"
+    echo "        安装：rustup target add wasm32-unknown-unknown"
+fi
+
+# ---------- 5. 文章静态检查 ----------
+step "tools/check-articles.sh"
+./tools/check-articles.sh || fail "文章静态检查未通过"
+ok "文章"
+
+echo ""
+echo -e "${GREEN}[SUCCESS]${NC} 所有质量门禁通过，允许推送"
+echo ""
