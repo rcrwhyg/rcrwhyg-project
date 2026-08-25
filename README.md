@@ -24,7 +24,7 @@ Personal site: Leptos 0.8 SSR-first + Axum (HTTP / planned WS+SSE) + Tailwind. E
 ./tools/test-local.sh      # 本地全量门禁：fmt + clippy(-D) + test + wasm + 文章检查
 ```
 
-推送后远程 CI（云效 Flow / GitHub Actions）须全绿，见 [docs/quality-gates.md](docs/quality-gates.md)。
+推送后远程 CI（GitHub Actions，见 `.github/workflows/ci.yml`）须全绿，见 [docs/quality-gates.md](docs/quality-gates.md)。
 
 ## Develop
 

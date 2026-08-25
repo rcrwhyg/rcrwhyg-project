@@ -1,6 +1,6 @@
 # Git 工作流规范
 
-> 本项目托管于阿里云效 Codeup（`master` 分支），本地门禁与远程 CI 双重把关。
+> 本项目托管于 **GitHub**（开源，`master` 分支），远程 CI 为 GitHub Actions；本地门禁与远程 CI 双重把关。
 
 ## 分支策略
 
@@ -13,10 +13,11 @@
 |------|------|------|
 | 提交前 | 敏感文件/凭据扫描、`cargo fmt`、文章静态检查 | `hooks/pre-commit` |
 | 推送前 | 格式 + clippy(-D warnings) + 测试 + wasm 编译 + 文章检查 | `hooks/pre-push` |
-| 推送后 | 远程 CI 全绿 | 云效 Flow / GitHub Actions（见 `docs/quality-gates.md`） |
+| 推送后 | 远程 CI 全绿 | GitHub Actions（见 `docs/quality-gates.md`） |
 
 - 首次克隆后运行 `./tools/install-hooks.sh` 安装钩子
 - 本地手动跑全套：`./tools/test-local.sh`
+- 推送后用 `gh run list` / `gh run watch` 盯守 Actions，全绿才算完成
 - **禁止**在门禁失败时使用 `--no-verify` 绕过（真正的紧急情况除外，事后必须补齐）
 
 ## 提交规范
@@ -52,7 +53,13 @@
 
 1. 本地 `./tools/test-local.sh` 通过（pre-push 钩子会再跑一次）
 2. `git push`
-3. 推送后**盯紧远程 CI**：云效流水线 / Actions 全绿才算完成；失败必须查看日志、修复根因、重新推送，不能以本地通过代替远程验证
+3. 推送后**盯紧远程 CI**：`gh run list` / `gh run watch <run-id>` 直到 GitHub Actions 全绿才算完成；失败必须查看日志、修复根因、重新推送，不能以本地通过代替远程验证
+
+## 开源仓库注意事项
+
+- 本仓库在 GitHub **公开**：任何提交前确认不含凭据、内网地址、个人信息（pre-commit 会兜底扫描）
+- `.env` 永不入库；模板只放 `.env.example`
+- 历史已用 `git filter-repo` 清除过 `.env`；**禁止**再把含口令的文件提交进历史
 
 ## 密钥与敏感信息
 

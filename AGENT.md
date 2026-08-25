@@ -22,7 +22,8 @@
 
 - 提交前：`hooks/pre-commit`（自动）
 - 推送前：`hooks/pre-push` 全量门禁（格式 / clippy `-D warnings` / 测试 / wasm 编译 / 文章静态检查），本地手动等价命令 `./tools/test-local.sh`
-- 推送后：**盯紧远程 CI**（云效流水线 / GitHub Actions），全绿才算完成；失败必须看日志、修根因、重推，不得以本地通过代替远程验证
+- 推送后：**盯紧远程 CI**（GitHub Actions，`gh run list` / `gh run watch`），全绿才算完成；失败必须看日志、修根因、重推，不得以本地通过代替远程验证
+- 本仓库为 **GitHub 开源仓库**：任何提交前确认不含凭据、内网地址、个人信息（pre-commit 会兜底扫描）
 - 禁止 `--no-verify` 绕过；禁止无实质理由的 `#[allow]`
 
 ### 4. 用户主导

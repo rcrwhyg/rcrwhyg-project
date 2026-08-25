@@ -20,7 +20,7 @@
 |----|------|------|------|
 | 本地-轻 | `git commit` | 检查 1、5（+ 文章静态检查） | `hooks/pre-commit` |
 | 本地-全 | `git push` / 手动 | 检查 1–5 + 文章 | `hooks/pre-push`、`tools/test-local.sh` |
-| 远程 | 每次推送 | 检查 1–5 + 文章 | 云效 Flow（`yunxiao/flow.yml`）/ GitHub Actions（`.github/workflows/ci.yml`） |
+| 远程 | 每次推送 | 检查 1–5 + 文章 | GitHub Actions（`.github/workflows/ci.yml`） |
 | 发布 | 部署前 | `cargo leptos build --release` + musl 二进制构建成功 | 见 `docs/build-musl.md` |
 
 ### 约定
@@ -63,11 +63,11 @@ git commit ── pre-commit（轻）── 失败 → 修复
 git push ── pre-push（全）── 失败 → 修复
    │
    ▼
-远程 CI（云效/Actions）── 失败 → 看日志修复重推
+远程 CI（GitHub Actions）── 失败 → 看日志修复重推
    │
    ▼
 代码：可部署            文章：进入人工审核 → 用户确认 → 公众号发布
 ```
 
 ---
-*门禁代码：`hooks/`、`tools/check-articles.sh`、`.github/workflows/`、`yunxiao/`。改动门禁本身需要提交说明理由。*
+*门禁代码：`hooks/`、`tools/check-articles.sh`、`.github/workflows/`。改动门禁本身需要提交说明理由。*
