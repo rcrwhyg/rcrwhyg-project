@@ -68,3 +68,16 @@ export LEPTOS_SITE_ADDR="0.0.0.0:3000"
 - Prefer `rustls` stacks (already used by sqlx feature set) for musl friendliness.
 - If a crate fails to link under zig/musl, replace it or vendor a pure-Rust alternative before adding glibc-only deps.
 - Dev loop stays `cargo leptos watch` on the host; zigbuild is for **release/cross** artifacts.
+
+## 4) Deploy via GitHub Actions
+
+The build steps above are the same; the CD pipeline at
+[`.github/workflows/cd.yml`](../.github/workflows/cd.yml) automates them.
+A `git tag vX.Y.Z && git push origin vX.Y.Z` is all the user types —
+the workflow builds, ships the binary + `site/` to the Aliyun ECS
+instance, atomically swaps, restarts the systemd unit, and smoke-tests.
+
+For the **one-time VPS bootstrap** (user creation, sudoers drop-in,
+Caddy install, key install, .env), see
+[`docs/deploy-vps.md`](deploy-vps.md). The atomic-swap script is
+[`deploy/remote.sh`](../deploy/remote.sh). Rollback is a manual re-tag.
