@@ -7,13 +7,10 @@ module.exports = {
             rs: (content) => content.replace(/(?:^|\s)class:/g, ' '),
         },
         extract: {
-            // 自定义 Rust 文件的类名提取规则
             rs: (content) => {
-                // 匹配 class="xxx" 和 class={"xxx"}
                 const matches = content.match(/class\s*=\s*["'{][^"'}]*["'}]/g);
                 if (!matches) return [];
 
-                // 提取引号中的内容
                 return matches.flatMap(match => {
                     const classContent = match.match(/["']{([^"'}]+)["'}]/)?.[1] ||
                         match.match(/["']([^"']+)["']/)?.[1];
@@ -23,7 +20,13 @@ module.exports = {
         },
     },
     theme: {
-        extend: {},
+        extend: {
+            fontFamily: {
+                display: ['Orbitron', '"Noto Sans SC"', 'sans-serif'],
+                mono: ['"Share Tech Mono"', 'ui-monospace', 'monospace'],
+                body: ['"Noto Sans SC"', 'system-ui', 'sans-serif'],
+            },
+        },
     },
     plugins: [],
 }

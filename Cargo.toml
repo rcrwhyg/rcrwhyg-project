@@ -6,39 +6,87 @@ edition = "2024"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[[bin]]
+name = "rcrwhyg-server"
+path = "src/main.rs"
+required-features = ["ssr"]
+
+[[bin]]
+name = "create-admin"
+path = "src/bin/create-admin.rs"
+required-features = ["ssr"]
+
 [dependencies]
-axum = { version = "0.8.8", optional = true }
+axum = { version = "0.8.9", optional = true, features = ["macros", "ws"] }
+codee = "0.3"
 console_error_panic_hook = { version = "0.1.7", optional = true }
 dotenvy = "0.15.7"
-leptos = { version = "0.8.17" }
-leptos_axum = { version = "0.8.8", optional = true }
+futures-util = { version = "0.3", optional = true }
+leptos = { version = "0.8.20" }
+leptos-use = { version = "0.19", default-features = false, features = ["storage"] }
+leptos_axum = { version = "0.8.10", optional = true }
 leptos_meta = { version = "0.8.6" }
-leptos_router = { version = "0.8.12" }
-reqwest = { version = "0.13.2", features = ["json"] }
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.149"
+leptos_router = { version = "0.8.15" }
+pulldown-cmark = { version = "0.13.4", default-features = false, features = ["html"], optional = true }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
 sqlx = { version = "0.8.6", features = [
     "postgres",
     "runtime-tokio",
     "runtime-tokio-rustls",
+    "chrono",
 ], optional = true }
-tokio = { version = "1.49.0", features = ["rt-multi-thread"], optional = true }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"], optional = true }
+
+thaw = { git = "https://github.com/thaw-ui/thaw", default-features = false }
+tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros", "time"], optional = true }
+tokio-stream = { version = "0.1", optional = true, features = ["time"] }
 tower = { version = "0.5.3", optional = true }
-tower-http = { version = "0.6.8", features = ["fs"], optional = true }
-wasm-bindgen = { version = "0.2.114", optional = true }
+tower-http = { version = "0.7.0", features = ["fs"], optional = true }
+wasm-bindgen = { version = "0.2.126", optional = true }
+web-sys = { version = "0.3", optional = true, features = [
+    "Window",
+    "Document",
+    "Element",
+    "MouseEvent",
+] }
+argon2 = { version = "0.5.3", features = ["std"], optional = true }
+sha2 = { version = "0.10", optional = true }
+hex = { version = "0.4.3", optional = true }
+governor = { version = "0.10", optional = true }
+cookie = { version = "0.18.1", optional = true }
+http = { version = "1", optional = true }
 
 [features]
-hydrate = ["leptos/hydrate", "dep:console_error_panic_hook", "dep:wasm-bindgen"]
+hydrate = [
+    "leptos/hydrate",
+    "dep:console_error_panic_hook",
+    "dep:wasm-bindgen",
+    "dep:web-sys",
+    "thaw/hydrate",
+]
 ssr = [
     "dep:axum",
     "dep:sqlx",
+    "dep:chrono",
     "dep:tokio",
+    "dep:tokio-stream",
+    "dep:futures-util",
     "dep:tower",
     "dep:tower-http",
     "dep:leptos_axum",
+    "dep:pulldown-cmark",
+    "dep:argon2",
+    "dep:sha2",
+    "dep:hex",
+    "dep:governor",
+    "dep:cookie",
+    "dep:http",
     "leptos/ssr",
     "leptos_meta/ssr",
     "leptos_router/ssr",
+    "leptos-use/ssr",
+    "thaw/ssr",
 ]
 
 # Defines a size-optimized profile for the WASM bundle in release mode

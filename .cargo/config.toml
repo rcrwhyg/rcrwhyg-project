@@ -1,0 +1,4 @@
+# Mitigate rustc 1.97+ query-depth overflows with Leptos/thaw view types.
+# Required for thaw git + complex view trees. See Leptos erase_components docs.
+[build]
+rustflags = ["--cfg", "erase_components"]

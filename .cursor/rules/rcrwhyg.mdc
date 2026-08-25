@@ -1,0 +1,21 @@
+---
+description: Hard constraints for the rcrwhyg Leptos personal site
+globs:
+  - "**/*"
+---
+
+# rcrwhyg project rules
+
+- Never commit secrets or hard-code API keys/app secrets in source.
+- Server-only dependencies must be `optional` and enabled only via the `ssr` feature.
+- Prefer CSS variables from `style/tokens.css` over hard-coded brand colors in Rust views.
+- Visual direction is **extreme cyberpunk** with a **dynamic mouse-follow backdrop** (ADR-004).
+- Themes: **dark and light only**. Do not reintroduce Terminal / dual-shell style modes (ADR-003 / superseded ADR-010).
+- Keep a single Leptos route tree and a single site chrome.
+- Site is diversified: new areas beyond blog/tools are allowed; register routes + header nav.
+- Content source of truth for essays is site-owned `posts`, not multi-platform `articles`.
+- Prefer Leptos ecosystem crates (thaw, leptos-use, …) and Suspense/Transition for async UI; design toward islands.
+- Axum serves HTTP, and will serve WebSocket + SSE in-process — do not split realtime into another service by default.
+- Production server artifact is static **musl** via **cargo-zigbuild**; prefer musl-friendly deps (`rustls`).
+- Follow ADRs in `docs/adr/` for stack, areas, ecosystem, realtime, build, and publishing changes.
+- Testing: follow [docs/testing.md](../../docs/testing.md). Prefer adding unit/DB tests with new server/domain logic; never commit secrets.
