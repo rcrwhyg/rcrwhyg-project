@@ -16,3 +16,6 @@ Cargo.lock
 # Local secrets and editor noise
 .env
 .DS_Store
+
+# Personal Caddyfile overrides (production config is in deploy/caddy/Caddyfile)
+deploy/caddy/Caddyfile.local
