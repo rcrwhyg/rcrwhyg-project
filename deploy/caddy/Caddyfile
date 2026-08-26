@@ -3,7 +3,7 @@
 # Caddy auto-issues via Let's Encrypt. For Aliyun CAS, see docs/deploy-vps.md.
 
 {
-    email ops@<DOMAIN>
+    email rcrwhyg@sina.com
     admin off
 }
 
