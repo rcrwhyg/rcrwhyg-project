@@ -70,8 +70,7 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           key: ${{ secrets.VPS_SSH_KEY }}
           source: deploy/remote.sh
-          target: /opt/rcrwhyg/bin/remote.sh.new
-          command: install -m 0755 /opt/rcrwhyg/bin/remote.sh.new /opt/rcrwhyg/bin/remote.sh
+          target: /opt/rcrwhyg/bin
 
       - name: Stop service before swap
         uses: appleboy/ssh-action@v1
@@ -92,7 +91,7 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           key: ${{ secrets.VPS_SSH_KEY }}
           source: target/x86_64-unknown-linux-musl/release/rcrwhyg-server
-          target: /opt/rcrwhyg/rcrwhyg-server.new
+          target: /opt/rcrwhyg
 
       - name: Upload new site dir
         uses: appleboy/scp-action@v1
