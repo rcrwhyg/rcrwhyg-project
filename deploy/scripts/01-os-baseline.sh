@@ -53,20 +53,23 @@ if [ -f /root/bootstrap/rcrwhyg_admin.pub ]; then
   echo
   echo "==> admin 公钥已安装。请【另开一个终端】验证："
   echo "    ssh -i ~/.ssh/rcrwhyg_admin rcrwhyg-admin 'echo admin-key-ok'"
-  echo "    确认返回 admin-key-ok 后，再继续下面的第 6 / 7 步。"
-  echo
+  echo "    确认返回 admin-key-ok 后，按回车继续；否则 Ctrl-C 中止排查。"
+  read -r -p '==> 输入回车继续：' _
 else
-  echo "==> 未找到 /root/bootstrap/rcrwhyg_admin.pub；请先 scp 公钥上来再重跑本节。"
+  echo "==> 未找到 /root/bootstrap/rcrwhyg_admin.pub；跳过密钥安装。"
+  echo "    若你不打算用密钥（不推荐），可直接 Ctrl-C 后重跑第 5 步之后的部分。"
 fi
 
 # ---------- 6. ufw：先放行 22/80/443 再 enable ----------
+# 只有在已确认能密钥登录时才继续（否则你随时可能断线）。
+[ -s /root/.ssh/authorized_keys ] || { echo "==> authorized_keys 为空，拒绝继续（防锁死）。"; exit 1; }
 ufw allow 22/tcp comment 'SSH'
 ufw allow 80/tcp comment 'HTTP'
 ufw allow 443/tcp comment 'HTTPS'
 ufw --force enable
 ufw status verbose
 
-# ---------- 7. 关闭 SSH 口令登录（务必在 admin 密钥验证通过后） ----------
+# ---------- 7. 关闭 SSH 口令登录（authorized_keys 非空守卫已在上一步） ----------
 # 用 drop-in 覆盖（优先级高于主配置/cloud-init）
 install -m 0644 -o root -g root /dev/null /etc/ssh/sshd_config.d/60-hardening.conf
 grep -q '^PasswordAuthentication no' /etc/ssh/sshd_config.d/60-hardening.conf \
