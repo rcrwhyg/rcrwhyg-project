@@ -8,7 +8,7 @@ created on the VPS / in GitHub Secrets only.
 | File | Where it lands on the VPS | Purpose |
 |------|---------------------------|---------|
 | `remote.sh` | `/opt/rcrwhyg/bin/remote.sh` | Atomic swap + smoke test + log finalization; called by `.github/workflows/cd.yml` |
-| `scripts/01-os-baseline.sh` | run on VPS (root) | OS baseline: apt mirror, timezone, swap, SSH key + ufw hardening |
+| `scripts/01-os-baseline.sh` | run on VPS (root) | Swap 4G + swappiness (anti-OOM on 2G box) + read-only env snapshot. apt source/timezone/firewall/SSH-policy are handled by Aliyun defaults + operator manually |
 | `scripts/02-pgdg-postgres.sh` | run on VPS (root) | PostgreSQL 18 via PGDG + article-02 tuning + app role/db |
 | `scripts/03-caddy.sh` | run on VPS (root) | Caddy install + repo Caddyfile deploy |
 | `scripts/04-app-user.sh` | run on VPS (root) | `rcrwhyg` user, `/opt/rcrwhyg` layout, sudoers, .env, systemd unit |

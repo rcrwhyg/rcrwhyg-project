@@ -1,81 +1,50 @@
 #!/usr/bin/env bash
 # 01-os-baseline.sh — 重装后的 OS 基线（Phase A）
 # 以 root 运行： bash /root/bootstrap/01-os-baseline.sh
-# 覆盖：apt 阿里云源 / 时区+ntp / Swap 4G / swappiness=10 / 基础包 / admin 公钥 / ufw / 关闭口令登录
-# 幂等，可分段重复跑。任何一步失败立即退出（set -euo pipefail）。
+#
+# 范围（按运维决策裁剪于 2026-08）：
+#   只做 Swap 4G + swappiness=10（2C2G 防 OOM 的关键，见文章 02）+ 只读环境快照。
+#   以下事项默认已满足/由运维手动处理，脚本不再触碰：
+#     - apt 源：阿里 Ubuntu 镜像出厂即阿里云源，无需改写
+#     - 时区/NTP：新实例默认 Asia/Shanghai（CST）且已同步
+#     - 防火墙：阿里云控制台防火墙已收紧（22/80/443 only），服务器内不再加 ufw
+#     - SSH 登录策略：保留密码登录（运维通过 Termius 使用）；部署账号 rcrwhyg 走密钥，不受影响
+#
+# 如需把本脚本之外的加固找回来，参见 docs/deploy-vps.md 对应章节（手动执行）。
 set -euo pipefail
 
 . /etc/os-release
-CODENAME="${VERSION_CODENAME}"          # resolute (26.04) | noble (24.04)
-echo "==> Ubuntu ${VERSION} (${CODENAME})"
+echo "==> Ubuntu ${VERSION} (${VERSION_CODENAME})"
 
-# ---------- 1. apt 源 -> 阿里云（内网 mirror，ECS 免公网流量） ----------
-cat > /etc/apt/sources.list <<EOF
-deb http://mirrors.cloud.aliyuncs.com/ubuntu/ ${CODENAME} main restricted universe multiverse
-deb http://mirrors.cloud.aliyuncs.com/ubuntu/ ${CODENAME}-updates main restricted universe multiverse
-deb http://mirrors.cloud.aliyuncs.com/ubuntu/ ${CODENAME}-backports main restricted universe multiverse
-deb http://mirrors.cloud.aliyuncs.com/ubuntu/ ${CODENAME}-security main restricted universe multiverse
-EOF
-chmod 0644 /etc/apt/sources.list
-# 若内网 mirror 不可达（apt update 报连接失败），改用公网阿里云镜像：
-#   sed -i 's#mirrors.cloud.aliyuncs.com#mirrors.aliyun.com#' /etc/apt/sources.list
-apt-get update
-DEBIAN_FRONTEND=noninteractive apt-get full-upgrade -y
-apt-get autoremove -y
+# ---------- 1. 只读环境快照（确认状态，不做任何修改） ----------
+echo "--- 时区 ---"
+timedatectl status | grep -E 'Time zone|synchronized' || true
+echo "--- 内存 ---"
+free -h
+echo "--- 磁盘 ---"
+df -h / | tail -n +1
+echo "--- 当前 Swap 状态 ---"
+swapon --show || echo '(无 swap)'
 
-# ---------- 2. 时区 + NTP（必须先于 Postgres 初始化） ----------
-timedatectl set-timezone Asia/Shanghai
-timedatectl set-ntp true
-timedatectl status
-
-# ---------- 3. Swap 4G + swappiness=10（与文章 02 一致） ----------
+# ---------- 2. Swap 4G + swappiness=10（幂等） ----------
 if ! swapon --show | grep -q '/swapfile'; then
+  echo "==> 创建 4G swapfile..."
   fallocate -l 4G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=4096
   chmod 600 /swapfile
   mkswap /swapfile
   swapon /swapfile
+else
+  echo "==> swap 已存在，跳过创建。"
 fi
 grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
 sysctl -w vm.swappiness=10 >/dev/null
 grep -q '^vm.swappiness=10' /etc/sysctl.conf || echo 'vm.swappiness=10' >> /etc/sysctl.conf
-swapon --show
-sysctl vm.swappiness
-
-# ---------- 4. 基础包 ----------
-DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-  curl wget ca-certificates gnupg apt-transport-https lsb-release ufw rsync htop
-
-# ---------- 5. SSH：先装 admin 公钥（密钥在前，口令开关在后，顺序错了会锁死自己） ----------
-# 前提： /root/bootstrap/rcrwhyg_admin.pub 已被本地 scp 上来
-if [ -f /root/bootstrap/rcrwhyg_admin.pub ]; then
-  install -d -m 0700 -o root -g root /root/.ssh
-  install -m 0600 -o root -g root /root/bootstrap/rcrwhyg_admin.pub /root/.ssh/authorized_keys
-  echo
-  echo "==> admin 公钥已安装。请【另开一个终端】验证："
-  echo "    ssh -i ~/.ssh/rcrwhyg_admin rcrwhyg-admin 'echo admin-key-ok'"
-  echo "    确认返回 admin-key-ok 后，按回车继续；否则 Ctrl-C 中止排查。"
-  read -r -p '==> 输入回车继续：' _
-else
-  echo "==> 未找到 /root/bootstrap/rcrwhyg_admin.pub；跳过密钥安装。"
-  echo "    若你不打算用密钥（不推荐），可直接 Ctrl-C 后重跑第 5 步之后的部分。"
-fi
-
-# ---------- 6. ufw：先放行 22/80/443 再 enable ----------
-# 只有在已确认能密钥登录时才继续（否则你随时可能断线）。
-[ -s /root/.ssh/authorized_keys ] || { echo "==> authorized_keys 为空，拒绝继续（防锁死）。"; exit 1; }
-ufw allow 22/tcp comment 'SSH'
-ufw allow 80/tcp comment 'HTTP'
-ufw allow 443/tcp comment 'HTTPS'
-ufw --force enable
-ufw status verbose
-
-# ---------- 7. 关闭 SSH 口令登录（authorized_keys 非空守卫已在上一步） ----------
-# 用 drop-in 覆盖（优先级高于主配置/cloud-init）
-install -m 0644 -o root -g root /dev/null /etc/ssh/sshd_config.d/60-hardening.conf
-grep -q '^PasswordAuthentication no' /etc/ssh/sshd_config.d/60-hardening.conf \
-  || echo 'PasswordAuthentication no' >> /etc/ssh/sshd_config.d/60-hardening.conf
-systemctl restart ssh
 
 echo
-echo "==> Phase A 完成。验证："
-echo "    ssh -i ~/.ssh/rcrwhyg_admin rcrwhyg-admin 'hostname; whoami'"
+echo "==> 完成。验证："
+echo "    swapon --show"
+echo "    sysctl vm.swappiness"
+echo
+echo "==> 按运维决策，以下请手动处理（本脚本不再执行）："
+echo "    sudo apt update && sudo apt full-upgrade -y"
+echo "    安装后续阶段所需基础包： sudo apt install -y curl ca-certificates gnupg apt-transport-https lsb-release rsync"

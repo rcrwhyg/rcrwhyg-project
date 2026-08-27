@@ -6,8 +6,9 @@ release is just `git tag vX.Y.Z && git push origin vX.Y.Z`.
 
 > **推荐执行方式**：直接用仓库脚本 `deploy/scripts/01-os-baseline.sh` →
 > `02-pgdg-postgres.sh` → `03-caddy.sh` → `04-app-user.sh`（本手册命令即
-> 各脚本内容，二者等价）。**PostgreSQL 走 PGDG 18**（Ubuntu/Debian 布局：
-> 配置 `/etc/postgresql/18/main/postgresql.conf`、数据
+> 各脚本内容，二者等价）。**01 只负责 Swap + 环境快照**：apt 源/时区/
+> 控制台防火墙/SSH 登录策略由阿里云默认 + 运维手动管理，脚本已裁剪。
+> **PostgreSQL 走 PGDG 18**（Ubuntu/Debian 布局：配置 `/etc/postgresql/18/main/postgresql.conf`、数据
 > `/var/lib/postgresql/18/main`、服务 `postgresql@18-main`；`/var/lib/pgsql/<ver>/data`
 > 是 RPM 发行版路径，不适用 Ubuntu）。`create-admin` 不经 CD 部署，通过
 > 本地 SSH 隧道连远端 5432 运行一次即可（见 §11）。
