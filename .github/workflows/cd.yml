@@ -56,6 +56,9 @@ jobs:
       - name: Install cargo-zigbuild
         run: cargo install --locked cargo-zigbuild
 
+      - name: Install Zig (linker/cc for cargo-zigbuild)
+        uses: mlugg/setup-zig@v1
+
       - name: Build site (WASM + CSS)
         run: cargo leptos build --release
 
