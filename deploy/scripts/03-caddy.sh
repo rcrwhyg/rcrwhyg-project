@@ -14,10 +14,13 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y caddy
 caddy version
 
 # ---------- 2. 落地仓库 Caddyfile 并替换占位符 ----------
+# 防御：只用仓库模板（含 <DOMAIN> 占位）。若传的不是模板（例：旧机器 Caddyfile），拒绝执行。
 test -f /root/bootstrap/Caddyfile || { echo "==> 缺少 /root/bootstrap/Caddyfile，请先 scp 仓库的 deploy/caddy/Caddyfile。"; exit 1; }
+grep -q '<DOMAIN>' /root/bootstrap/Caddyfile \
+  || { echo "==> /root/bootstrap/Caddyfile 缺少 <DOMAIN> 占位，不是仓库模板，请重新 scp。"; exit 1; }
 install -o root -g root -m 0644 /root/bootstrap/Caddyfile /etc/caddy/Caddyfile
-sed -i 's/<DOMAIN>/rcrwhyg.com, www.rcrwhyg.com/' /etc/caddy/Caddyfile
-sed -i 's/ops@<DOMAIN>/rcrwhyg@sina.com/' /etc/caddy/Caddyfile
+sed -i 's#<DOMAIN>#rcrwhyg.com, www.rcrwhyg.com#g' /etc/caddy/Caddyfile
+sed -i 's#ops@<DOMAIN>#rcrwhyg@sina.com#g' /etc/caddy/Caddyfile
 caddy validate --config /etc/caddy/Caddyfile
 systemctl reload caddy
 systemctl enable --now caddy
