@@ -60,9 +60,10 @@ jobs:
         run: |
           ZIG_VER=0.16.0
           curl -fsSLo /tmp/zig.tar.xz "https://ziglang.org/download/${ZIG_VER}/zig-x86_64-linux-${ZIG_VER}.tar.xz"
-          tar -xJf /tmp/zig.tar.xz -C /tmp
-          sudo install -m 0755 "/tmp/zig-x86_64-linux-${ZIG_VER}/zig" /usr/local/bin/zig
+          sudo tar -xJf /tmp/zig.tar.xz -C /usr/local/lib
+          echo "/usr/local/lib/zig-x86_64-linux-${ZIG_VER}" >> "$GITHUB_PATH"
           zig version
+          zig cc -v >/dev/null 2>&1 && echo "zig cc OK"
 
       - name: Build site (WASM + CSS)
         run: cargo leptos build --release
