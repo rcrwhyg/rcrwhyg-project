@@ -2,6 +2,8 @@
 Description=rcrwhyg-server (Leptos SSR, musl static)
 After=network-online.target
 Wants=network-online.target
+StartLimitIntervalSec=120
+StartLimitBurst=3
 
 [Service]
 Type=simple
@@ -12,8 +14,6 @@ ExecStart=/opt/rcrwhyg/rcrwhyg-server
 EnvironmentFile=/opt/rcrwhyg/.env
 Restart=on-failure
 RestartSec=3
-StartLimitBurst=3
-StartLimitIntervalSec=120
 TimeoutStopSec=15
 KillMode=mixed
 KillSignal=SIGTERM
