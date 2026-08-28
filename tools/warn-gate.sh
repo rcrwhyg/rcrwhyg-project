@@ -14,11 +14,14 @@ LOG="${1:?usage: warn-gate.sh <logfile>}"
 #  - proc-macro-error2 2.0.1 未来不兼容（leptos_macro 上游依赖，未发修复）
 #  - "linker stderr: ..."（zigld 的良性提示，如 "ignoring deprecated linker optimization setting"）
 #  - "generated N warning"（Cargo 的汇总行；真正的具体 warning 行仍会被下面的过滤留下）
+#  - "dropping unsupported crate type ... cdylib"（cdylib 仅为 wasm hydrate 制品需要；
+#    构建服务端 musl bin 时 rustc 会提示丢弃，属预期）
 WARNINGS=$(perl -pe 's/\e\[[0-9;]*m//g' "$LOG" \
   | grep 'warning' \
   | grep -vF 'proc-macro-error2 v2.0.1' \
   | grep -vE 'warning: linker stderr:' \
   | grep -vE 'generated [0-9]+ warning' \
+  | grep -vE 'warning: dropping unsupported crate type' \
   | sed '/^$/d' || true)
 
 if [ -n "$WARNINGS" ]; then
