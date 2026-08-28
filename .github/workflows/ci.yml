@@ -32,14 +32,20 @@ jobs:
       - name: "[2/5] cargo clippy (ssr, -D warnings)"
         run: cargo clippy --features ssr --all-targets -- -D warnings
 
-      - name: "[3/5] cargo test (ssr)"
-        run: cargo test --features ssr
+      - name: "[3/5] cargo test (ssr) + warning gate"
+        run: |
+          set -o pipefail
+          cargo test --features ssr 2>&1 | tee /tmp/ci-test.log
+          bash tools/warn-gate.sh /tmp/ci-test.log
         env:
           # 无数据库：DB 集成用例按软门控自动跳过（见 docs/testing.md）
           RUST_LOG: info
 
-      - name: "[4/5] cargo check (hydrate, wasm32)"
-        run: cargo check --lib --features hydrate --target wasm32-unknown-unknown
+      - name: "[4/5] cargo check (hydrate, wasm32) + warning gate"
+        run: |
+          set -o pipefail
+          cargo check --lib --features hydrate --target wasm32-unknown-unknown 2>&1 | tee /tmp/ci-wasm.log
+          bash tools/warn-gate.sh /tmp/ci-wasm.log
 
       - name: "[5/5] Article static gates"
         run: bash tools/check-articles.sh

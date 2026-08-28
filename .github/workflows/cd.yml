@@ -60,11 +60,17 @@ jobs:
           "${ZIG_DIR}/zig" version
           "${ZIG_DIR}/zig" cc -v >/dev/null 2>&1 && echo "zig cc OK"
 
-      - name: Build site (WASM + CSS)
-        run: cargo leptos build --release
+      - name: Build site (WASM + CSS) + warning gate
+        run: |
+          set -o pipefail
+          cargo leptos build --release 2>&1 | tee /tmp/cd-site.log
+          bash tools/warn-gate.sh /tmp/cd-site.log
 
-      - name: Build static musl server
-        run: cargo zigbuild --release --target x86_64-unknown-linux-musl --features ssr --bin rcrwhyg-server
+      - name: Build static musl server + warning gate
+        run: |
+          set -o pipefail
+          cargo zigbuild --release --target x86_64-unknown-linux-musl --features ssr --bin rcrwhyg-server 2>&1 | tee /tmp/cd-musl.log
+          bash tools/warn-gate.sh /tmp/cd-musl.log
 
       # --- 部署统一走 runner 自带 openssh 原语：
       #     (appleboy/ssh-action@v1 只认 `script` 不认 `command`；scp-action 会保留 source 相对路径，
