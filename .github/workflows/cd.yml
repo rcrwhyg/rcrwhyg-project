@@ -19,6 +19,8 @@ env:
   CARGO_TERM_COLOR: always
   LEPTOS_OUTPUT_NAME: rcrwhyg-server
   RUSTFLAGS: '-C strip=symbols'
+  VPS_HOST: ${{ secrets.VPS_HOST }}
+  VPS_USER: ${{ secrets.VPS_USER }}
 
 jobs:
   deploy-production:
@@ -27,15 +29,6 @@ jobs:
     environment: production
     timeout-minutes: 30
     steps:
-      - name: Record deploy metadata
-        id: meta
-        run: |
-          echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-          echo "sha=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
-          echo "actor=${GITHUB_ACTOR}" >> "$GITHUB_OUTPUT"
-          echo "run_id=${GITHUB_RUN_ID}" >> "$GITHUB_OUTPUT"
-          echo "reason=${{ github.event.inputs.reason || 'tag-push' }}" >> "$GITHUB_OUTPUT"
-
       - name: Checkout
         uses: actions/checkout@v5
         with:
@@ -63,7 +56,7 @@ jobs:
           curl -fsSLo /tmp/zig.tar.xz "https://ziglang.org/download/${ZIG_VER}/zig-x86_64-linux-${ZIG_VER}.tar.xz"
           sudo tar -xJf /tmp/zig.tar.xz -C /usr/local/lib
           echo "${ZIG_DIR}" >> "$GITHUB_PATH"
-          # GITHUB_PATH only affects LATER steps; call zig by full path here
+          # GITHUB_PATH only takes effect for LATER steps; call zig by full path here
           "${ZIG_DIR}/zig" version
           "${ZIG_DIR}/zig" cc -v >/dev/null 2>&1 && echo "zig cc OK"
 
@@ -73,62 +66,38 @@ jobs:
       - name: Build static musl server
         run: cargo zigbuild --release --target x86_64-unknown-linux-musl --features ssr --bin rcrwhyg-server
 
-      - name: Upload deploy script
-        uses: appleboy/scp-action@v1
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          port: ${{ secrets.VPS_PORT }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: deploy/remote.sh
-          target: /opt/rcrwhyg/bin
+      # --- 部署统一走 runner 自带 openssh 原语：
+      #     (appleboy/ssh-action@v1 只认 `script` 不认 `command`；scp-action 会保留 source 相对路径，
+      #      两者都会把文件传到错误的嵌套目录 / 静默空跑。) ---
+      - name: Configure SSH deploy key
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+        env:
+          DEPLOY_KEY: ${{ secrets.VPS_SSH_KEY }}
 
-      - name: Stop service before swap
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          port: ${{ secrets.VPS_PORT }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          command: |
-            sudo -n systemctl stop rcrwhyg.service || true
-            sleep 2
+      - name: Upload deploy script
+        run: scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new deploy/remote.sh "$VPS_USER@$VPS_HOST:/opt/rcrwhyg/bin/remote.sh"
+
+      - name: Stop service + clean transient dirs
+        run: ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new "$VPS_USER@$VPS_HOST" 'sudo -n systemctl stop rcrwhyg.service || true; rm -rf /opt/rcrwhyg/bin/deploy /opt/rcrwhyg/target /opt/rcrwhyg/site.staging'
 
       - name: Upload new binary
-        uses: appleboy/scp-action@v1
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          port: ${{ secrets.VPS_PORT }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: target/x86_64-unknown-linux-musl/release/rcrwhyg-server
-          target: /opt/rcrwhyg
+        run: scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new target/x86_64-unknown-linux-musl/release/rcrwhyg-server "$VPS_USER@$VPS_HOST:/opt/rcrwhyg/rcrwhyg-server"
 
       - name: Upload new site dir
-        uses: appleboy/scp-action@v1
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          port: ${{ secrets.VPS_PORT }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: target/site/
-          target: /opt/rcrwhyg/site.staging/
-          rm: true
+        run: |
+          tar -C target/site -cf - . | \
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new "$VPS_USER@$VPS_HOST" \
+            'rm -rf /opt/rcrwhyg/site.staging && mkdir -p /opt/rcrwhyg/site.staging && tar -C /opt/rcrwhyg/site.staging -xf -'
 
-      - name: Atomic swap + start + smoke + finalize
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          port: ${{ secrets.VPS_PORT }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          command: |
-            set -euo pipefail
-            bash /opt/rcrwhyg/bin/remote.sh swap
-            sudo -n systemctl start rcrwhyg.service
-            bash /opt/rcrwhyg/bin/remote.sh smoke
-            bash /opt/rcrwhyg/bin/remote.sh finalize \
-              "${{ steps.meta.outputs.tag }}" \
-              "${{ steps.meta.outputs.sha }}" \
-              "${{ steps.meta.outputs.actor }}" \
-              "${{ steps.meta.outputs.reason }}"
+      - name: Swap + start + smoke + finalize
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new "$VPS_USER@$VPS_HOST" "set -euo pipefail; \
+            bash /opt/rcrwhyg/bin/remote.sh swap && \
+            sudo -n systemctl start rcrwhyg.service && \
+            bash /opt/rcrwhyg/bin/remote.sh smoke && \
+            bash /opt/rcrwhyg/bin/remote.sh finalize '${GITHUB_REF_NAME}' '${GITHUB_SHA}' '${GITHUB_ACTOR}' '${REASON}'"
+        env:
+          REASON: ${{ github.event.inputs.reason || 'tag-push' }}
