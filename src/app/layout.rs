@@ -3,7 +3,7 @@ use leptos_router::NavigateOptions;
 use leptos_router::components::A;
 use leptos_router::hooks::use_navigate;
 
-use crate::app::CyberBackground;
+use crate::app::DynamicBackground;
 use crate::app::{clear_admin_session, use_admin_session, use_site_preference};
 use crate::components::{BeianFooter, ThemeControls};
 use crate::server::admin_logout;
@@ -77,7 +77,7 @@ pub fn SiteShell(children: Children) -> impl IntoView {
             class="site-root min-h-screen"
             data-theme=move || preference.theme.get().as_str()
         >
-            <CyberBackground />
+            <DynamicBackground />
             <SiteHeader />
             <div class="site-body">
                 <main class="site-main">

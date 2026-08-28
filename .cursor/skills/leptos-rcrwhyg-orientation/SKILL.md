@@ -9,7 +9,7 @@ Read [docs/architecture.md](../../../docs/architecture.md) and ADRs under [docs/
 
 ## Product
 
-Diversified personal site: blog, tools, and **future areas**. Single chrome shell, **dark/light only**, extreme cyberpunk dynamic backdrop (CJK-first), SSR-first, static musl deploy. **No Terminal mode.**
+Diversified personal site: blog, tools, and **future areas**. Single chrome shell, **dark/light only**, calm-tech dynamic backdrop (CJK-first), SSR-first, static musl deploy. **No Terminal mode.**
 
 ## Map
 

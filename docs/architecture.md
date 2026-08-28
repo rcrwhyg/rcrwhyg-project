@@ -7,7 +7,7 @@ Personal site: **Leptos 0.8 SSR-first**, **Axum** (HTTP + planned WebSocket/SSE)
 - **Diversified site areas** — not limited to blog + tools. New sections register like tools and share one route tree + one chrome.
 - Current areas: home, blog/essays (`posts`), toolbox (`/tools` + registry)
 - **Single UI chrome** (fixed header + content). Themes: **dark** (default) + **light** only via `data-theme` (ADR-003)
-- Visual: **extreme cyberpunk** dynamic backdrop (grid/orbs/beams + mouse-follow glow) — Chinese-first; not pixel-primary (ADR-004)
+- Visual: **calm-tech** dynamic backdrop (grid/orbs/beams + mouse-follow glow) — Chinese-first; not pixel-primary (ADR-004)
 - Export/import: Markdown frontmatter in `src/domain/export.rs` (no third-party sync yet)
 
 ## Rendering & interactivity
@@ -133,7 +133,7 @@ See [testing.md](testing.md). Coverage is **thin by default**; agents must exten
 | 001 | Leptos + Axum stack |
 | 002 | Posts-first content |
 | 003 | Single chrome + dark/light themes |
-| 004 | Design tokens (extreme cyberpunk) |
+| 004 | Design tokens (calm-tech) |
 | 005 | Tool registry |
 | 006 | Diversified site areas |
 | 007 | Leptos ecosystem (thaw, leptos-use, Suspense, islands) |

@@ -13,7 +13,7 @@ Follow ADR-007. Discover crates via [awesome-leptos](https://github.com/leptos-r
 |------|--------|
 | Interactive UI kit | **thaw** (0.5 line for Leptos 0.8) |
 | Browser / reactive hooks | **leptos-use** |
-| Layout / cyberpunk chrome + backdrop | Tailwind + `style/tokens.css` + `CyberBackground` |
+| Layout / calm-tech chrome + backdrop | Tailwind + `style/tokens.css` + `CyberBackground` |
 
 Do not invent a second component library. Wrap thaw where theming must match tokens.
 
@@ -38,7 +38,7 @@ Do not invent a second component library. Wrap thaw where theming must match tok
 ## Thaw + Tailwind
 
 - Thaw for forms, dialogs, menus, complex controls
-- Tailwind utilities + CSS variables for page layout and cyberpunk skin
+- Tailwind utilities + CSS variables for page layout and calm-tech skin
 - Brand colors only via tokens (`--accent`, etc.)
 
 ## In this repo

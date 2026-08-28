@@ -1,4 +1,6 @@
-/* Extreme cyberpunk tokens — dark / light only. */
+/* 冷静科技（calm-tech）设计令牌 — dark / light only.
+   现代化 · 简洁 · 个性 · 动态 · 高效。
+   动态背景（DynamicBackground）的颜色与浓度全部由本文件下列 token 控制。 */
 
 :root {
   --site-header-h: 3.75rem;
@@ -7,60 +9,60 @@
 :root,
 [data-theme="dark"],
 .site-root[data-theme="dark"] {
-  --bg: #05010d;
-  --bg-grid: rgba(0, 245, 255, 0.07);
-  --surface: #0c0520;
-  --surface-2: #140a2e;
-  --fg: #e8f7ff;
-  --fg-muted: #8eb6c9;
-  --fg-dim: #5a7a8c;
-  --border: #3d2a6b;
-  --grid-line: rgba(255, 0, 170, 0.14);
-  --accent: #00f0ff;
-  --accent-2: #ff2bd6;
-  --accent-3: #b8ff3c;
-  --accent-glow: rgba(0, 240, 255, 0.45);
-  --accent-glow-strong: rgba(255, 43, 214, 0.4);
-  --link: #7af0ff;
-  --danger: #ff3d71;
-  --cyber-orb-a: rgba(0, 240, 255, 0.28);
-  --cyber-orb-b: rgba(255, 43, 214, 0.22);
-  --cyber-orb-c: rgba(184, 255, 60, 0.14);
-  --cyber-cursor: rgba(0, 240, 255, 0.22);
-  --cyber-cursor-core: rgba(255, 43, 214, 0.35);
-  --cyber-beam: rgba(0, 240, 255, 0.12);
-  --cyber-scan: rgba(0, 255, 200, 0.04);
-  --font-display: "Orbitron", "Noto Sans SC", sans-serif;
-  --font-mono: "Share Tech Mono", ui-monospace, monospace;
+  --bg: #0b1016;
+  --bg-grid: rgba(96, 140, 196, 0.05);
+  --surface: #111826;
+  --surface-2: #182235;
+  --fg: #eef3f8;
+  --fg-muted: #9aa8b8;
+  --fg-dim: #6b7889;
+  --border: #2a3547;
+  --grid-line: rgba(120, 160, 210, 0.07);
+  --accent: #4f8ef7;
+  --accent-2: #3fc0c7;
+  --accent-3: #7fb069;
+  --accent-glow: rgba(79, 142, 247, 0.22);
+  --accent-glow-strong: rgba(63, 192, 199, 0.18);
+  --link: #7fb0ff;
+  --danger: #e5534b;
+  --cyber-orb-a: rgba(79, 142, 247, 0.16);
+  --cyber-orb-b: rgba(63, 192, 199, 0.12);
+  --cyber-orb-c: rgba(127, 176, 105, 0.08);
+  --cyber-cursor: rgba(79, 142, 247, 0.1);
+  --cyber-cursor-core: rgba(63, 192, 199, 0.16);
+  --cyber-beam: rgba(79, 142, 247, 0.1);
+  --cyber-scan: rgba(95, 170, 220, 0.03);
+  --font-display: "Space Grotesk", "Noto Sans SC", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
   --font-body: "Noto Sans SC", system-ui, sans-serif;
 }
 
 [data-theme="light"],
 .site-root[data-theme="light"] {
-  --bg: #f4f0ff;
-  --bg-grid: rgba(107, 31, 255, 0.08);
+  --bg: #f5f7fa;
+  --bg-grid: rgba(70, 110, 160, 0.05);
   --surface: #ffffff;
-  --surface-2: #efe8ff;
-  --fg: #1a0b2e;
-  --fg-muted: #4c3a66;
-  --fg-dim: #7a6a94;
-  --border: #c9b0ff;
-  --grid-line: rgba(120, 40, 200, 0.12);
-  --accent: #6b1fff;
-  --accent-2: #c4008f;
-  --accent-3: #2a8f00;
-  --accent-glow: rgba(107, 31, 255, 0.28);
-  --accent-glow-strong: rgba(196, 0, 143, 0.22);
-  --link: #3451d1;
-  --danger: #c62828;
-  --cyber-orb-a: rgba(107, 31, 255, 0.2);
-  --cyber-orb-b: rgba(196, 0, 143, 0.16);
-  --cyber-orb-c: rgba(0, 180, 200, 0.14);
-  --cyber-cursor: rgba(107, 31, 255, 0.18);
-  --cyber-cursor-core: rgba(196, 0, 143, 0.28);
-  --cyber-beam: rgba(107, 31, 255, 0.1);
-  --cyber-scan: rgba(107, 31, 255, 0.035);
-  --font-display: "Orbitron", "Noto Sans SC", sans-serif;
-  --font-mono: "Share Tech Mono", ui-monospace, monospace;
+  --surface-2: #eceff4;
+  --fg: #1a2332;
+  --fg-muted: #5a6a7c;
+  --fg-dim: #8b98a8;
+  --border: #d5dce6;
+  --grid-line: rgba(70, 110, 160, 0.08);
+  --accent: #2f6bd8;
+  --accent-2: #178c94;
+  --accent-3: #5a8f4a;
+  --accent-glow: rgba(47, 107, 216, 0.16);
+  --accent-glow-strong: rgba(23, 140, 148, 0.12);
+  --link: #3362b8;
+  --danger: #c0392b;
+  --cyber-orb-a: rgba(47, 107, 216, 0.12);
+  --cyber-orb-b: rgba(23, 140, 148, 0.1);
+  --cyber-orb-c: rgba(90, 143, 74, 0.06);
+  --cyber-cursor: rgba(47, 107, 216, 0.08);
+  --cyber-cursor-core: rgba(23, 140, 148, 0.14);
+  --cyber-beam: rgba(47, 107, 216, 0.08);
+  --cyber-scan: rgba(60, 110, 180, 0.03);
+  --font-display: "Space Grotesk", "Noto Sans SC", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
   --font-body: "Noto Sans SC", system-ui, sans-serif;
 }

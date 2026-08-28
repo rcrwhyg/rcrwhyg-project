@@ -1,6 +1,6 @@
 ---
 name: leptos-ui-theme-chrome
-description: Enforces single site chrome, dark/light themes only, and extreme cyberpunk dynamic backdrop for rcrwhyg. Use when editing layout, header, theme toggle, CyberBackground, CSS tokens, or when the user mentions dark mode, light mode, cyberpunk UI, or mouse-follow effects.
+description: Enforces single site chrome, dark/light themes only, and calm-tech dynamic backdrop for rcrwhyg. Use when editing layout, header, theme toggle, CyberBackground, CSS tokens, or when the user mentions dark mode, light mode, calm-tech UI, or mouse-follow effects.
 ---
 
 # Theme + chrome (no Terminal)

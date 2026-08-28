@@ -14,7 +14,7 @@ Terminal / dual-shell UX added complexity without matching the Chinese-first pro
 - Appearance modes: **`dark`** (default) and **`light` only** — no Terminal / Modern style switch
 - Persist theme in `localStorage` key `rcrwhyg.theme`
 - Reflect via `data-theme` on `html` / `body` / `.site-root`
-- Dynamic cyberpunk backdrop (`CyberBackground`) with mouse-follow glow; tokens differ per theme (ADR-004)
+- Dynamic calm-tech backdrop (`DynamicBackground`) with mouse-follow glow; tokens differ per theme (ADR-004)
 
 ## Consequences
 

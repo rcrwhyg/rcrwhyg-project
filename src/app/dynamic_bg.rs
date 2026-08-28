@@ -1,9 +1,9 @@
 use leptos::prelude::*;
 
-/// Full-viewport cyberpunk backdrop: animated grid/orbs + mouse-follow glow.
-/// Dark and light themes get distinct motion/color via CSS `[data-theme]`.
+/// 冷静科技下的动态背景：网格/光斑 + 鼠标跟随高光。
+/// 颜色与浓度全部由 style/tokens.css 的 token 控制（深/浅主题分别取值）。
 #[component]
-pub fn CyberBackground() -> impl IntoView {
+pub fn DynamicBackground() -> impl IntoView {
     let mx = RwSignal::new(50.0_f64);
     let my = RwSignal::new(40.0_f64);
 

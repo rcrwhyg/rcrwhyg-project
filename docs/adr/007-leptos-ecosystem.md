@@ -13,7 +13,7 @@ Leptos has a rich ecosystem ([awesome-leptos](https://github.com/leptos-rs/aweso
 1. **Prefer ecosystem crates** when they fit: e.g. **thaw** (Leptos 0.8 → thaw `0.5` line), **leptos-use** for browser/reactive utilities.
 2. **Async data**: load via server functions / `Resource`; wrap UI in `<Suspense>` / `<Transition>`; avoid blocking the whole page shell.
 3. **Islands direction**: migrate interactive islands toward `islands` / islands-router so most of the site stays SSR HTML; full-page `hydrate` is the current scaffold, not the long-term ideal for every page.
-4. **Thaw + Tailwind**: Thaw for complex interactive controls; Tailwind + `tokens.css` for layout, chrome, and extreme cyberpunk skin. One token source of truth for brand colors.
+4. **Thaw + Tailwind**: Thaw for complex interactive controls; Tailwind + `tokens.css` for layout, chrome, and calm-tech surface. One token source of truth for brand colors.
 5. Before adding a crate, check awesome-leptos + crates.io compatibility with Leptos **0.8** and musl-friendly deps.
 
 ## Consequences

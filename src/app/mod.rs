@@ -1,5 +1,5 @@
 mod admin_session;
-mod cyber_bg;
+mod dynamic_bg;
 mod layout;
 mod theme;
 
@@ -7,7 +7,7 @@ pub use admin_session::{
     AdminSession, clear_admin_session, provide_admin_session, set_logged_in_admin,
     use_admin_session,
 };
-pub use cyber_bg::CyberBackground;
+pub use dynamic_bg::DynamicBackground;
 pub use layout::{SiteHeader, SiteShell};
 pub use theme::{SitePreference, ThemeMode, provide_site_preference, use_site_preference};
 
@@ -37,7 +37,7 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                     <link rel="preconnect" href="https://fonts.googleapis.com" />
                     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
                     <link
-                        href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap"
+                        href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap"
                         rel="stylesheet"
                     />
                     <AutoReload options=options.clone() />
