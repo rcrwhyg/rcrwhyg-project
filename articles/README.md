@@ -27,9 +27,12 @@
 |------|------|------|------|---------------|--------------|
 | 01 | [01-the-modest-start.md](01-the-modest-start.md) | 朴素的启程：从一台 2C2G 服务器开始 | 已发布 | — | 2026-02-28 |
 | 02 | [02-deploy-full-stack-part-1.md](02-deploy-full-stack-part-1.md) | 如何完成全栈应用线上部署？（一）：让 2C2G 服务器跑得更稳 | 已发布 | — | 2026-03-12 |
-| 03 | [03-deploy-full-stack-part-2.md](03-deploy-full-stack-part-2.md) | 如何完成全栈应用线上部署？（二）：Caddy 网关与首次上线 | 待审核 | — | — |
+| 03 | [03-deploy-full-stack-part-2.md](03-deploy-full-stack-part-2.md) | 如何完成全栈应用线上部署？（二）：Caddy 网关与首次上线 | 待审核（系列一收官） | — | — |
+| 04 | [04-rebuild-to-cd-pipeline.md](04-rebuild-to-cd-pipeline.md) | 从零重建到一键部署：一条 CD 流水线的诞生 | 待审核（新系列开篇） | — | — |
 
 > 01、02 在"网站首发"模型确立前以公众号【如春日午后阳光】首发（日期见上）；本仓库内的 Markdown 是按统一规范整理的 canonical 副本。如需在个人网站补发，可直接用本仓库文件发布，届时回填"个人网站发布日"列并更新 permalink。
+>
+> 系列规划：01/02/03 属于"全栈部署（手工）"系列，03 收束并衔接 04；04 起开启"重建与持续部署"系列。
 
 ## 与站点博客（posts）的关系
 
