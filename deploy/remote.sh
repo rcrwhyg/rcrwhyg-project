@@ -17,7 +17,12 @@ case "$cmd" in
       mv -f rcrwhyg-server.new rcrwhyg-server
     fi
     if [[ -d ${SITE_NAME}.staging ]]; then
-      [[ -d ${SITE_NAME} ]]     && mv -f "${SITE_NAME}"     "${SITE_NAME}.prev"
+      if [[ -d ${SITE_NAME} ]]; then
+        # rotate out the previous backup first, then move current -> prev
+        # (mv into existing dir would nest site.prev/site and fail on retry)
+        rm -rf "${SITE_NAME}.prev"
+        mv -f "${SITE_NAME}" "${SITE_NAME}.prev"
+      fi
       mv -f "${SITE_NAME}.staging" "${SITE_NAME}"
     fi
     ;;
