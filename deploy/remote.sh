@@ -45,7 +45,8 @@ case "$cmd" in
       >> var/deploy.log
     ls -1dt "${SITE_NAME}.prev".* 2>/dev/null \
       | tail -n +4 \
-      | xargs -r rm -rf
+      | xargs -r rm -rf \
+      || true   # 首次部署没有 .prev，ls 无匹配退出 1；pipefail 下必须兜底
     ;;
   *)
     echo "usage: $0 {swap|smoke|finalize ...}" >&2
