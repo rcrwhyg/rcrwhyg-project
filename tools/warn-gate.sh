@@ -12,7 +12,11 @@ LOG="${1:?usage: warn-gate.sh <logfile>}"
 ALLOW='warning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1'
 
 # 注意：这里只盯 "warning"，不去拦 "note:" 等伴随行。
-WARNINGS=$(grep 'warning' "$LOG" | grep -Fxv "$ALLOW" | sed '/^$/d' || true)
+# Cargo 在 CARGO_TERM_COLOR=always 时会给输出加 ANSI 色码，先剥掉再比对/WARNING。
+WARNINGS=$(perl -pe 's/\e\[[0-9;]*m//g' "$LOG" \
+  | grep 'warning' \
+  | grep -Fxv "$ALLOW" \
+  | sed '/^$/d' || true)
 
 if [ -n "$WARNINGS" ]; then
     echo "[warn-gate][FAIL] 构建/测试输出出现未白名单的 warning："
