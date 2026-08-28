@@ -1,4 +1,15 @@
 #[cfg(feature = "ssr")]
+use axum::body::Body;
+#[cfg(feature = "ssr")]
+use axum::extract::Request;
+#[cfg(feature = "ssr")]
+use axum::http::StatusCode;
+#[cfg(feature = "ssr")]
+use axum::middleware::Next;
+#[cfg(feature = "ssr")]
+use axum::response::Response;
+
+#[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use std::net::SocketAddr;
@@ -41,6 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/sse/heartbeat", get(sse_heartbeat))
         .route("/ws/echo", get(ws_echo))
         .fallback(leptos_axum::file_and_error_handler::<AppState, _>(shell))
+        .layer(middleware::from_fn(strip_trailing_slash))
         .layer(middleware::from_fn(global_rate_limit_middleware))
         .with_state(app_state);
 
@@ -54,6 +66,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .await?;
 
     Ok(())
+}
+
+/// 统一去掉非根路径的尾部斜杠：`/articles/` → `/articles`（308）。
+/// 尾部斜杠会命出 thaw 的 SSRMountStyleProvider panic 分支（"without a <head>"），
+/// 归一化后保证 `/articles/xx/` 与 `/articles/xx` 解析一致。
+#[cfg(feature = "ssr")]
+async fn strip_trailing_slash(req: Request, next: Next) -> Response {
+    let path = req.uri().path();
+    if path.len() > 1 && path.ends_with('/') {
+        let mut location = path.trim_end_matches('/').to_string();
+        if let Some(query) = req.uri().query() {
+            location.push('?');
+            location.push_str(query);
+        }
+        return Response::builder()
+            .status(StatusCode::TEMPORARY_REDIRECT)
+            .header("location", location)
+            .body(Body::empty())
+            .expect("empty body response");
+    }
+    next.run(req).await
 }
 
 #[cfg(not(feature = "ssr"))]
