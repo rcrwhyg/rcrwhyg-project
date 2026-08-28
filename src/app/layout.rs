@@ -25,6 +25,7 @@ pub fn SiteHeader() -> impl IntoView {
                     <nav class="hidden items-center gap-4 text-sm sm:flex">
                         <A href="/" attr:class="nav-link">"首页"</A>
                         <A href="/blog" attr:class="nav-link">"博客"</A>
+                        <A href="/articles" attr:class="nav-link">"文章"</A>
                         <A href="/tools" attr:class="nav-link">"工具"</A>
                         <Show when=move || logged_in.get() fallback=|| ()>
                             <span class="text-[color:var(--fg-dim)]" aria-hidden="true">"|"</span>

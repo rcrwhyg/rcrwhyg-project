@@ -21,8 +21,9 @@ use thaw::ConfigProvider;
 use thaw::ssr::SSRMountStyleProvider;
 
 use crate::pages::{
-    AdminGate, AdminLoginPage, AdminPostEditPage, AdminPostNewPage, AdminPostsPage, BlogPage,
-    BlogPostPage, HomePage, NotFoundPage, ToolsIndexPage, ToolsPlaceholderPage,
+    AdminGate, AdminLoginPage, AdminPostEditPage, AdminPostNewPage, AdminPostsPage, ArticlePage,
+    ArticlesIndexPage, BlogPage, BlogPostPage, HomePage, NotFoundPage, ToolsIndexPage,
+    ToolsPlaceholderPage,
 };
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
@@ -68,6 +69,8 @@ pub fn App() -> impl IntoView {
                         <Route path=path!("") view=HomePage />
                         <Route path=path!("blog") view=BlogPage />
                         <Route path=path!("blog/:slug") view=BlogPostPage />
+                        <Route path=path!("articles") view=ArticlesIndexPage />
+                        <Route path=path!("articles/:slug") view=ArticlePage />
                         <Route path=path!("tools") view=ToolsIndexPage />
                         <Route path=path!("tools/echo") view=ToolsPlaceholderPage />
                         <Route path=path!("admin") view=AdminGate />

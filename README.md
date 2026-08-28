@@ -18,7 +18,7 @@ Personal site: Leptos 0.8 SSR-first + Axum (HTTP / planned WS+SSE) + Tailwind. E
 
 - 总纲：[AGENT.md](AGENT.md)（权限边界、工作流、门禁纪律）
 - 规则：[rules/](rules/)（git 工作流、代码质量、文章质量）
-- 文章规范：[specs/article-template.md](specs/article-template.md)、公众号文章目录 [articles/](articles/)
+- 文章规范：[specs/article-template.md](specs/article-template.md)、个人网站首发文章目录 [articles/](articles/)（公众号【如春日午后阳光】为转载渠道）
 
 ## 质量门禁
 
