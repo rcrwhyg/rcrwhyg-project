@@ -13,10 +13,7 @@
   - [配色落地：薄荷绿 + 天空蓝 + 阴影 + 光 + 玻璃](#配色落地薄荷绿--天空蓝--阴影--光--玻璃)
   - [信息架构决策](#信息架构决策)
   - [玻璃质感的取舍与可读性规则](#玻璃质感的取舍与可读性规则)
-  - [信息架构决策](#信息架构决策)
-  - [玻璃质感的取舍与可读性规则](#玻璃质感的取舍与可读性规则)
   - [沉淀：单源 token 与预览页](#沉淀单源-token-与预览页)
-  - [收尾](#收尾)
   - [总结](#总结)
     - [核心要点](#核心要点)
   - [参考资料](#参考资料)
@@ -56,7 +53,7 @@
 - **"个性"在个人站里的成熟做法**不是套个异型壳子，而是用统一的字体、配色、留白、微交互，把"这个人"自然表达出来。
 
 我留意到几类个人站模式：
-- Derek Sivers 的 "now page" 风格：一张小页面，写当前在做什么（<https://sivers.org/now/>）
+- Derek Sivers 的 "now page" 风格：一张小页面，写当前在做什么
 - `uses.tech` 那套"我用什么"页面：编辑、终端、硬件，开发者之间爱看
 - `roadmap.sh` 那种"学习路径图"：把技术栈变成可视化进度
 - "数字花园"（Digital Garden）运动：比博客轻的演进式笔记，适合记录还在生长的想法
@@ -112,7 +109,7 @@
 按"内容决定布局"梳理。我的内容池：
 - 技术 / 经验分享（已有 `/articles` + `/blog`）
 - 工具分享（web/服务端/多平台；已有 `/tools` 注册表）
-- 多生态学习（Java/Rust 主力；React 辅；Zig 关注；Go 生手；Cangjie+鸿蒙 早期；MoonBit 关注）
+- 多生态学习（Java、Rust、React、Zig、Go、Cangjie+鸿蒙、MoonBit等）
 
 推导出的 IA（导航一级板块）：
 
@@ -157,10 +154,6 @@
 
 实际落地时，`style/tokens.css` 是这套设计的**单源真值**——所有组件（卡片、按钮、模态、输入框、链接）都引用 token，主题切换与玻璃强度都自动跟随。后续新增 `/radar`、`/lab` 板块时也只需要在 token 之上挂一个 `section-accent` 切换器，组件本身保持稳定。
 
-## 收尾
-
-设计语言、信息架构、玻璃规则都已落定——记在仓库的 memory 与 `docs/palette-preview.html` 里。这份笔记把"为什么这么做"与"长什么样"讲清楚；具体执行留给后续的文章与代码。
-
 ## 总结
 
 ### 核心要点
@@ -171,7 +164,6 @@
 4. **玻璃全站用**，但通过**强度（subtle/strong）+ 边缘光晕（mint/sky/mix）** 分出层次
 5. **可读性优先**：玻璃面板上的文字必须 WCAG-AA 对比度
 6. **预览页（docs/palette-preview.html）是协作面**：改 token 看着改，IDE Browser 即时反馈
-7. **下一步进 plan mode** 做整体重构（IA、路由、组件、CD）
 
 ## 参考资料
 
@@ -180,9 +172,8 @@
 3. roadmap.sh 学习路线风格：https://roadmap.sh/
 4. Indie Web / Personal Web 思想：https://indieweb.org/
 5. 数字花园（Digital Garden）概念参考：https://maggieappleton.com/garden-history/
-6. Caddy 反代与自动 HTTPS：https://caddyserver.com/docs/
 
-**版本信息**: 本文基于 Leptos 0.8.20 / Axum 0.8.9 / Rust 1.97.1，写于 2026-08-29。
+**版本信息**: 本文基于 Leptos 0.8.20 / Axum 0.8.9 / Rust 1.97.1，写于 2026-08。
 
 ---
 
