@@ -1,68 +1,114 @@
-/* 冷静科技（calm-tech）设计令牌 — dark / light only.
-   现代化 · 简洁 · 个性 · 动态 · 高效。
-   动态背景（DynamicBackground）的颜色与浓度全部由本文件下列 token 控制。 */
+/* 薄荷绿 (mint) + 天空蓝 (sky) 设计令牌 — dark / light 双套。
+   立体感 = 4 档阴影；光亮 = mint / sky 边缘光晕；表面 = 全站玻璃面。
+   视觉参考：docs/palette-preview.html（与本文件一一对应）。 */
 
 :root {
   --site-header-h: 3.75rem;
+  --font-display: "Space Grotesk", "Noto Sans SC", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-body: "Noto Sans SC", system-ui, sans-serif;
 }
 
+/* Dark theme — 默认（站点默认主题）。 */
 :root,
 [data-theme="dark"],
 .site-root[data-theme="dark"] {
-  --bg: #0b1016;
-  --bg-grid: rgba(96, 140, 196, 0.05);
-  --surface: #111826;
-  --surface-2: #182235;
-  --fg: #eef3f8;
-  --fg-muted: #9aa8b8;
-  --fg-dim: #6b7889;
-  --border: #2a3547;
-  --grid-line: rgba(120, 160, 210, 0.07);
-  --accent: #4f8ef7;
-  --accent-2: #3fc0c7;
-  --accent-3: #7fb069;
-  --accent-glow: rgba(79, 142, 247, 0.22);
-  --accent-glow-strong: rgba(63, 192, 199, 0.18);
-  --link: #7fb0ff;
-  --danger: #e5534b;
-  --cyber-orb-a: rgba(79, 142, 247, 0.16);
-  --cyber-orb-b: rgba(63, 192, 199, 0.12);
-  --cyber-orb-c: rgba(127, 176, 105, 0.08);
-  --cyber-cursor: rgba(79, 142, 247, 0.1);
-  --cyber-cursor-core: rgba(63, 192, 199, 0.16);
-  --cyber-beam: rgba(79, 142, 247, 0.1);
-  --cyber-scan: rgba(95, 170, 220, 0.03);
-  --font-display: "Space Grotesk", "Noto Sans SC", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
-  --font-body: "Noto Sans SC", system-ui, sans-serif;
+  /* 表面层 */
+  --bg: #0F1A18;
+  --bg-grid: rgba(120, 220, 170, 0.04);
+  --surface: #131C1A;
+  --surface-2: #1A2724;
+
+  /* 文字 */
+  --fg: #E6F2EC;
+  --fg-muted: #8FA8A0;
+  --fg-dim: #6A8079;
+
+  /* 描边 + 网格 */
+  --border: #243631;
+  --grid-line: rgba(45, 190, 126, 0.06);
+
+  /* 双主色 */
+  --accent: #2DBE7E;        /* 薄荷绿（主） */
+  --accent-2: #4FA3E0;      /* 天空蓝（次） */
+  --accent-3: #9B7CD8;      /* 备用 · 淡紫 */
+
+  /* 链接 + 警示 */
+  --link: #7FB6E8;
+  --danger: #E5534B;
+
+  /* 光晕（焦点 / 悬停） */
+  --accent-glow: rgba(45, 190, 126, 0.22);
+  --accent-glow-strong: rgba(79, 163, 224, 0.18);
+
+  /* 氛围背景 orbs */
+  --orb-a: rgba(45, 190, 126, 0.16);
+  --orb-b: rgba(79, 163, 224, 0.12);
+  --orb-c: rgba(155, 124, 216, 0.08);
+
+  /* 阴影 4 档（立体感） */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.18), 0 1px 3px rgba(0, 0, 0, 0.22);
+  --shadow-2: 0 2px 4px rgba(0, 0, 0, 0.20), 0 4px 14px rgba(0, 0, 0, 0.28);
+  --shadow-3: 0 4px 8px rgba(0, 0, 0, 0.28), 0 12px 32px rgba(0, 0, 0, 0.40);
+  --shadow-4: 0 12px 28px rgba(0, 0, 0, 0.36), 0 28px 64px rgba(0, 0, 0, 0.46);
+
+  /* 边缘光晕（薄荷 / 天空） */
+  --glow-mint: 0 0 0 1px rgba(45, 190, 126, 0.4), 0 0 24px rgba(45, 190, 126, 0.35);
+  --glow-sky: 0 0 0 1px rgba(79, 163, 224, 0.4), 0 0 24px rgba(79, 163, 224, 0.35);
+  --glow-mint-strong: 0 0 0 1px rgba(45, 190, 126, 0.5), 0 0 32px rgba(45, 190, 126, 0.5);
+  --glow-sky-strong: 0 0 0 1px rgba(79, 163, 224, 0.5), 0 0 32px rgba(79, 163, 224, 0.5);
+
+  /* 玻璃面 */
+  --glass-bg: rgba(255, 255, 255, 0.06);
+  --glass-bg-strong: rgba(255, 255, 255, 0.10);
+  --glass-border: rgba(255, 255, 255, 0.16);
+  --glass-inner: rgba(255, 255, 255, 0.04);
+
+  /* 板块 accent（每个 section 一根色条 / 边缘光） */
+  --section-accent: var(--accent);
 }
 
+/* Light theme. */
 [data-theme="light"],
 .site-root[data-theme="light"] {
-  --bg: #f5f7fa;
-  --bg-grid: rgba(70, 110, 160, 0.05);
-  --surface: #ffffff;
-  --surface-2: #eceff4;
-  --fg: #1a2332;
-  --fg-muted: #5a6a7c;
-  --fg-dim: #8b98a8;
-  --border: #d5dce6;
-  --grid-line: rgba(70, 110, 160, 0.08);
-  --accent: #2f6bd8;
-  --accent-2: #178c94;
-  --accent-3: #5a8f4a;
-  --accent-glow: rgba(47, 107, 216, 0.16);
-  --accent-glow-strong: rgba(23, 140, 148, 0.12);
-  --link: #3362b8;
-  --danger: #c0392b;
-  --cyber-orb-a: rgba(47, 107, 216, 0.12);
-  --cyber-orb-b: rgba(23, 140, 148, 0.1);
-  --cyber-orb-c: rgba(90, 143, 74, 0.06);
-  --cyber-cursor: rgba(47, 107, 216, 0.08);
-  --cyber-cursor-core: rgba(23, 140, 148, 0.14);
-  --cyber-beam: rgba(47, 107, 216, 0.08);
-  --cyber-scan: rgba(60, 110, 180, 0.03);
-  --font-display: "Space Grotesk", "Noto Sans SC", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
-  --font-body: "Noto Sans SC", system-ui, sans-serif;
+  --bg: #F4FAF7;
+  --bg-grid: rgba(24, 160, 106, 0.04);
+  --surface: #FFFFFF;
+  --surface-2: #E5F1EC;
+
+  --fg: #1A2B27;
+  --fg-muted: #5A6E68;
+  --fg-dim: #87978F;
+
+  --border: #C8DDD6;
+  --grid-line: rgba(24, 160, 106, 0.07);
+
+  --accent: #18A06A;
+  --accent-2: #2B7AD3;
+  --accent-3: #7E63C2;
+
+  --link: #1E6FBF;
+  --danger: #B0372B;
+
+  --accent-glow: rgba(24, 160, 106, 0.18);
+  --accent-glow-strong: rgba(43, 122, 211, 0.14);
+
+  --orb-a: rgba(24, 160, 106, 0.14);
+  --orb-b: rgba(43, 122, 211, 0.12);
+  --orb-c: rgba(126, 99, 194, 0.08);
+
+  --shadow-1: 0 1px 2px rgba(20, 43, 39, 0.06), 0 1px 3px rgba(20, 43, 39, 0.08);
+  --shadow-2: 0 2px 4px rgba(20, 43, 39, 0.06), 0 4px 14px rgba(20, 43, 39, 0.10);
+  --shadow-3: 0 4px 8px rgba(20, 43, 39, 0.10), 0 12px 32px rgba(20, 43, 39, 0.16);
+  --shadow-4: 0 12px 28px rgba(20, 43, 39, 0.14), 0 28px 64px rgba(20, 43, 39, 0.22);
+
+  --glow-mint: 0 0 0 1px rgba(24, 160, 106, 0.45), 0 0 22px rgba(24, 160, 106, 0.30);
+  --glow-sky: 0 0 0 1px rgba(43, 122, 211, 0.45), 0 0 22px rgba(43, 122, 211, 0.30);
+  --glow-mint-strong: 0 0 0 1px rgba(24, 160, 106, 0.55), 0 0 30px rgba(24, 160, 106, 0.40);
+  --glow-sky-strong: 0 0 0 1px rgba(43, 122, 211, 0.55), 0 0 30px rgba(43, 122, 211, 0.40);
+
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-bg-strong: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(20, 43, 39, 0.10);
+  --glass-inner: rgba(255, 255, 255, 0.5);
 }
