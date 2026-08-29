@@ -1,15 +1,23 @@
+mod about;
 mod admin;
 mod admin_posts;
 mod articles;
-mod blog;
+mod clock;
 mod home;
+mod lab;
+mod music;
 mod not_found;
+mod radar;
 mod tools;
 
+pub use about::AboutPage;
 pub use admin::{AdminGate, AdminLoginPage};
 pub use admin_posts::{AdminPostEditPage, AdminPostNewPage, AdminPostsPage};
 pub use articles::{ArticlePage, ArticlesIndexPage};
-pub use blog::{BlogPage, BlogPostPage};
+pub use clock::ClockPage;
 pub use home::HomePage;
+pub use lab::LabPage;
+pub use music::MusicPage;
 pub use not_found::NotFoundPage;
+pub use radar::RadarPage;
 pub use tools::{ToolsIndexPage, ToolsPlaceholderPage};

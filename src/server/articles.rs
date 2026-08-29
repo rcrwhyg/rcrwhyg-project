@@ -77,8 +77,21 @@ fn locate_articles_dir() -> Option<PathBuf> {
         .find(|p| p.is_dir())
 }
 
+/// Resolve a read-only data file (relative to the site root).
+///
+/// Tries `<LEPTOS_SITE_ROOT>/<rel>` first, then `<cwd>/<rel>`. Returns the
+/// first path that exists *as a file*. Used by `radar`, `lab`, `music`, `about`.
 #[cfg(feature = "ssr")]
-fn sorted_metas() -> Vec<ArticleMeta> {
+pub(crate) fn locate_data_file(rel: &str) -> Option<PathBuf> {
+    let cwd = std::env::current_dir().ok()?;
+    let root = std::env::var("LEPTOS_SITE_ROOT").unwrap_or_else(|_| "target/site".to_string());
+    [cwd.join(&root).join(rel), cwd.join(rel)]
+        .into_iter()
+        .find(|p| p.is_file())
+}
+
+#[cfg(feature = "ssr")]
+pub(crate) fn sorted_metas() -> Vec<ArticleMeta> {
     let Some(dir) = locate_articles_dir() else {
         return Vec::new();
     };

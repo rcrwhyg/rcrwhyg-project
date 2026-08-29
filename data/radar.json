@@ -1,0 +1,16 @@
+[
+  { "ecosystem": "Rust", "status": "主力 / 深入", "accent": "mint",
+    "note": "本站后端、Cargo 生态、async 运行时、axum / Tokio" },
+  { "ecosystem": "Java", "status": "主力 / 深入", "accent": "mint",
+    "note": "Spring / JVM 工具链、生态系统熟悉" },
+  { "ecosystem": "React", "status": "辅助", "accent": "sky",
+    "note": "前端生态，了解 hooks / state 模式" },
+  { "ecosystem": "Zig", "status": "持续学习 · 很感兴趣", "accent": "mint",
+    "note": "关注语言设计、comptime、async" },
+  { "ecosystem": "Cangjie + 鸿蒙", "status": "刚开始 · 提前投资", "accent": "sky",
+    "note": "看好国内生态未来，提前布局" },
+  { "ecosystem": "MoonBit", "status": "持续关注", "accent": "sky",
+    "note": "吸收 Rust / Zig / Go 精华的新兴生态" },
+  { "ecosystem": "Go", "status": "学 · 生手", "accent": "sky",
+    "note": "学过语言但生态陌生，无使用场景" }
+]

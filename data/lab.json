@@ -1,0 +1,10 @@
+[
+  { "id": "zig-clock", "name": "Zig Clock",
+    "status": "experimenting", "stack": "Zig + HTML5",
+    "blurb": "小巧的钟组件，探索 Zig 与 Web 互操作",
+    "link": null },
+  { "id": "leptos-mini-game", "name": "Leptos mini-game",
+    "status": "shipped", "stack": "Rust + Leptos + WASM",
+    "blurb": "在 /lab 玩的小 demo 集合（占位）",
+    "link": null }
+]
