@@ -7,6 +7,7 @@ globs:
 # rcrwhyg project rules
 
 - **Deploy gating (every time)**: any action that changes `origin` or production — `git push`, force-push, `git tag` create/push/delete, `workflow_dispatch`, `gh` mutating remote state — **MUST** get explicit user approval each time, regardless of prior one-shot consent. After executing, report commit SHA / tag / run id back. See [AGENT.md](../../AGENT.md) § Deploy Gating and [rules/deploy-gating.md](../../rules/deploy-gating.md).
+- **Local verification loop (every change)**: after any code/UI change, run `bash tools/test-local.sh` + `cargo leptos build` + boot the dev server (`cargo run --features ssr --bin rcrwhyg-server`) and curl `/health` plus the affected routes. Report the local URL back to the user and **wait for inspection feedback** before committing. Do not commit until the user says so; do not push until the user separately approves. See [rules/local-verification.md](../../rules/local-verification.md).
 - Never commit secrets or hard-code API keys/app secrets in source.
 - Server-only dependencies must be `optional` and enabled only via the `ssr` feature.
 - Prefer CSS variables from `style/tokens.css` over hard-coded brand colors in Rust views.

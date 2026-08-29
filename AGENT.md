@@ -32,6 +32,7 @@
 
 - 重要决策（架构、对外发布、仓库可见性、第三方服务）与用户商议后执行
 - 文章发布、仓库公开/迁移等对外动作，必须用户明确确认
+- **每一轮代码 / UI 改动必须本地起服务给用户检视**，用户没说"可以 commit"之前**不要**提交；用户没说"可以 push / tag / CD"之前**不要**部署。详见 [`rules/local-verification.md`](rules/local-verification.md) 和 [`rules/deploy-gating.md`](rules/deploy-gating.md)
 - 主动汇报阶段性进展与遇到的问题
 
 ## 部署门禁（专门一条，重要）
@@ -39,6 +40,12 @@
 详细规则见 [`rules/deploy-gating.md`](rules/deploy-gating.md)。**一句话总结**：
 
 > 任何动作会改变 `origin`、生产部署或对外可见状态的，**每一次都问**，不靠"上次允许过"做推断。问完把 commit SHA / tag / run id 回传给用户作为回执。
+
+## 本地验证循环（专门一条，每次改动必走）
+
+详细规则见 [`rules/local-verification.md`](rules/local-verification.md)。**一句话总结**：
+
+> 改完代码 → 跑全套本地门禁 → 启 dev server → 汇报 + 给出本地 URL → 等用户检视反馈 → 改完再循环。**用户没说"可以 commit"不 commit，用户没说"可以 push"不 push。**
 
 ## 代码工作流程
 
