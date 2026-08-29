@@ -29,8 +29,11 @@ pub fn SiteHeader() -> impl IntoView {
                         <A href="/radar" attr:class="nav-link">"学习雷达"</A>
                         <A href="/lab" attr:class="nav-link">"实验室"</A>
                         <A href="/about" attr:class="nav-link">"关于"</A>
+                        <span class="text-[color:var(--fg-dim)]" aria-hidden="true">"·"</span>
+                        <A href="/music" attr:class="nav-link">"音乐"</A>
+                        <A href="/clock" attr:class="nav-link">"番茄钟"</A>
                         <Show when=move || logged_in.get() fallback=|| ()>
-                            <span class="text-[color:var(--fg-dim)]" aria-hidden="true">"|"</span>
+                            <span class="text-[color:var(--fg-dim)]" aria-hidden="true">"·"</span>
                             <A href="/admin" attr:class="nav-link nav-link-admin">"后台"</A>
                             <A href="/admin/posts" attr:class="nav-link nav-link-admin">"文章"</A>
                         </Show>

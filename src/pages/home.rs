@@ -3,16 +3,16 @@ use leptos_router::components::A;
 
 use crate::server::{RecentItem, recent_items};
 
-/// `/` — hub. Replaces the original "创始文" home with a section-card grid
-/// + recent updates. Old narrative lives in `content/about.md`.
+/// `/` — hub. 板块入口用无限横向滚动轮播 + 最近更新 + 顶/底留白
+/// 都重做了一遍（issues 1-8 反馈的落实）。原 hub-hero + tool-footer
+/// 删了；板块卡片在 CSS-only 无限轮播里循环（hover 暂停）。
 #[component]
 pub fn HomePage() -> impl IntoView {
     let recent = Resource::new(|| (), |_| async move { recent_items().await });
 
     view! {
-        <div class="mx-auto my-8 max-w-5xl space-y-8 px-4">
-            <HubHero />
-            <SectionGrid />
+        <div class="mx-auto my-12 max-w-4xl space-y-10 px-4">
+            <SectionCarousel />
             <section>
                 <h2 class="section-title">"最近更新"</h2>
                 <Suspense fallback=move || {
@@ -29,7 +29,7 @@ pub fn HomePage() -> impl IntoView {
                         }
                         .into_any(),
                         Some(Ok(items)) => view! {
-                            <ul class="space-y-3">
+                            <ul class="space-y-5">
                                 {items
                                     .into_iter()
                                     .map(|item| view! { <RecentRow item=item /> })
@@ -40,75 +40,103 @@ pub fn HomePage() -> impl IntoView {
                     }}
                 </Suspense>
             </section>
-            <ToolFooter />
         </div>
     }
 }
 
+/// 板块横向无限轮播。track 里塞 2 份同样的 5 张 section-card
+/// （CSS 关键帧把 track translateX 从 0 滚到 -50%，正好一份
+/// 原始宽度的距离，过渡到 0% 时刚好是循环起点）。
 #[component]
-fn HubHero() -> impl IntoView {
+fn SectionCarousel() -> impl IntoView {
+    const ITEMS: [SectionItem; 5] = [
+        SectionItem {
+            href: "/articles",
+            cls: "s-sky",
+            eyebrow: "/articles",
+            name: "文章",
+            blurb: "技术 / 经验分享 · 文件式 + git+CD 自动化部署。",
+        },
+        SectionItem {
+            href: "/tools",
+            cls: "s-mint",
+            eyebrow: "/tools",
+            name: "工具",
+            blurb: "自用小工具集 · 通过 tools::registry 登记。",
+        },
+        SectionItem {
+            href: "/radar",
+            cls: "s-sky",
+            eyebrow: "/radar",
+            name: "学习雷达",
+            blurb: "多生态学习进度图（Rust / Java / Zig / Cangjie / MoonBit …）。",
+        },
+        SectionItem {
+            href: "/lab",
+            cls: "s-mint",
+            eyebrow: "/lab",
+            name: "实验室",
+            blurb: "Rust / Zig 写的小游戏、demo、可视化实验。",
+        },
+        SectionItem {
+            href: "/about",
+            cls: "s-mix",
+            eyebrow: "/about",
+            name: "关于",
+            blurb: "创刊叙事、板块速览、技术栈与联系方式。",
+        },
+    ];
+
     view! {
-        <section class="hub-hero">
-            <h1>
-                "在 "
-                <span class="mint">"薄荷"</span>
-                " 与 "
-                <span class="sky">"天空"</span>
-                " 之间，写下学习与作品"
-            </h1>
-            <p class="lead">
-                "「如春日午后阳光」 — 个人站点枢纽。Java / Rust 主线，React 副线；Zig / Cangjie / MoonBit 多元学习中。技术文章、自用小工具、学习雷达、实验 demo，都在这里。"
-            </p>
-            <div class="meta-row">
-                <span>"建于 2026-03"</span>
-                <span aria-hidden="true">"·"</span>
-                <span>"git + CD 驱动"</span>
-                <span aria-hidden="true">"·"</span>
-                <span>"Leptos 0.8 · Axum 0.8 · Rust"</span>
+        <section>
+            <h2 class="section-title">"板块"</h2>
+            <div class="section-carousel">
+                <div class="section-carousel__track">
+                    {ITEMS
+                        .iter()
+                        .map(|item| {
+                            let class = format!("section-card {}", item.cls);
+                            view! {
+                                <A href=item.href attr:class=class>
+                                    <span class="eyebrow">{item.eyebrow}</span>
+                                    <h3>{item.name}</h3>
+                                    <p>{item.blurb}</p>
+                                    <span class="open-link">"打开 →"</span>
+                                </A>
+                            }
+                        })
+                        .collect_view()}
+                    {ITEMS
+                        .iter()
+                        .map(|item| {
+                            let class = format!("section-card {}", item.cls);
+                            view! {
+                                <A
+                                    href=item.href
+                                    attr:class=class
+                                    attr:aria-hidden="true"
+                                    attr:tabindex="-1"
+                                >
+                                    <span class="eyebrow">{item.eyebrow}</span>
+                                    <h3>{item.name}</h3>
+                                    <p>{item.blurb}</p>
+                                    <span class="open-link">"打开 →"</span>
+                                </A>
+                            }
+                        })
+                        .collect_view()}
+                </div>
             </div>
         </section>
     }
 }
 
-#[component]
-fn SectionGrid() -> impl IntoView {
-    view! {
-        <section>
-            <h2 class="section-title">"板块"</h2>
-            <div class="section-grid">
-                <A href="/articles" attr:class="section-card s-sky">
-                    <span class="eyebrow">"/articles"</span>
-                    <h3>"文章"</h3>
-                    <p>"技术 / 经验分享 · 文件式 + git+CD 自动化部署。"</p>
-                    <span class="open-link">"浏览全部 →"</span>
-                </A>
-                <A href="/tools" attr:class="section-card s-mint">
-                    <span class="eyebrow">"/tools"</span>
-                    <h3>"工具"</h3>
-                    <p>"自用小工具集 · 通过 tools::registry 登记。"</p>
-                    <span class="open-link">"打开 →"</span>
-                </A>
-                <A href="/radar" attr:class="section-card s-sky">
-                    <span class="eyebrow">"/radar"</span>
-                    <h3>"学习雷达"</h3>
-                    <p>"多生态学习进度图（Rust / Java / Zig / Cangjie / MoonBit …）。"</p>
-                    <span class="open-link">"查看 →"</span>
-                </A>
-                <A href="/lab" attr:class="section-card s-mint">
-                    <span class="eyebrow">"/lab"</span>
-                    <h3>"实验室"</h3>
-                    <p>"Rust / Zig 写的小游戏、demo、可视化实验。"</p>
-                    <span class="open-link">"逛逛 →"</span>
-                </A>
-                <A href="/about" attr:class="section-card s-mix">
-                    <span class="eyebrow">"/about"</span>
-                    <h3>"关于"</h3>
-                    <p>"创刊叙事、板块速览、技术栈与联系方式。"</p>
-                    <span class="open-link">"了解更多 →"</span>
-                </A>
-            </div>
-        </section>
-    }
+struct SectionItem {
+    href: &'static str,
+    cls: &'static str,
+    eyebrow: &'static str,
+    name: &'static str,
+    blurb: &'static str,
 }
 
 #[component]
@@ -133,7 +161,10 @@ fn RecentRow(item: RecentItem) -> impl IntoView {
         <li class="list-card s-sky">
             <div class="flex flex-wrap items-baseline justify-between gap-3">
                 <h2 class="text-base font-semibold">
-                    <A href=item.href attr:class="no-underline text-[color:var(--accent)] hover:text-[color:var(--link)]">
+                    <A
+                        href=item.href
+                        attr:class="no-underline text-[color:var(--accent)] hover:text-[color:var(--link)]"
+                    >
                         {title}
                     </A>
                 </h2>
@@ -146,19 +177,5 @@ fn RecentRow(item: RecentItem) -> impl IntoView {
                 <p class="mt-1 text-sm muted-text">{summary.clone()}</p>
             </Show>
         </li>
-    }
-}
-
-#[component]
-fn ToolFooter() -> impl IntoView {
-    view! {
-        <section class="text-center">
-            <p class="dim-text text-sm">
-                "轻量工具："
-                <A href="/music" attr:class="link-text mx-1">"音乐"</A>
-                <span aria-hidden="true">"·"</span>
-                <A href="/clock" attr:class="link-text mx-1">"番茄钟"</A>
-            </p>
-        </section>
     }
 }
