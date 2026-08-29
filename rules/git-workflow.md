@@ -51,9 +51,20 @@
 
 ## 推送流程（AI Agent 必须遵守）
 
+> ⚠️ **推送前必须先问**。详见 [`rules/deploy-gating.md`](deploy-gating.md)。
+> 即使用户曾一次性授权过本地 commit 流程，**也不**默认延伸到 push / tag / 部署。
+
 1. 本地 `./tools/test-local.sh` 通过（pre-push 钩子会再跑一次）
-2. `git push`
-3. 推送后**盯紧远程 CI**：`gh run list` / `gh run watch <run-id>` 直到 GitHub Actions 全绿才算完成；失败必须查看日志、修复根因、重新推送，不能以本地通过代替远程验证
+2. **先问用户是否 push / 打 tag / 触发 CD**，得到明确批准再执行
+3. `git push`（或对应的 tag / force-push / 删 tag 操作）
+4. 推送后**盯紧远程 CI**：`gh run list` / `gh run watch <run-id>` 直到 GitHub Actions 全绿才算完成；失败必须查看日志、修复根因、**重新询问**用户是否重推，不能以本地通过代替远程验证
+5. 把 commit SHA / tag / run id 回传给用户作为执行回执
+
+## 部署门禁（高层摘要）
+
+- 任何改 `origin` 的动作（push / force-push / tag create / tag push / tag delete / workflow_dispatch / `gh` 改远端）**每一回都问**
+- 本地 commit / build / 测试 / 起 dev server：仍走门禁，**不**需要逐次问
+- 完整规则见 [`rules/deploy-gating.md`](deploy-gating.md)
 
 ## 开源仓库注意事项
 

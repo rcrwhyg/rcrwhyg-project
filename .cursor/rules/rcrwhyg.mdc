@@ -6,10 +6,11 @@ globs:
 
 # rcrwhyg project rules
 
+- **Deploy gating (every time)**: any action that changes `origin` or production — `git push`, force-push, `git tag` create/push/delete, `workflow_dispatch`, `gh` mutating remote state — **MUST** get explicit user approval each time, regardless of prior one-shot consent. After executing, report commit SHA / tag / run id back. See [AGENT.md](../../AGENT.md) § Deploy Gating and [rules/deploy-gating.md](../../rules/deploy-gating.md).
 - Never commit secrets or hard-code API keys/app secrets in source.
 - Server-only dependencies must be `optional` and enabled only via the `ssr` feature.
 - Prefer CSS variables from `style/tokens.css` over hard-coded brand colors in Rust views.
-- Visual direction is **calm-tech** with a **dynamic mouse-follow backdrop** (ADR-004).
+- Visual direction: **mint + sky** (`#2DBE7E` / `#4FA3E0`) with **shadow + glow** elevation and **glass** surfaces sitewide; dynamic background is a 135° linear-gradient (mint → lavender → sky) with 200 deterministic drifting particles. See [docs/palette-preview.html](../../docs/palette-preview.html) and [rules/deploy-gating.md](../../rules/deploy-gating.md) for deploy rules.
 - Themes: **dark and light only**. Do not reintroduce Terminal / dual-shell style modes (ADR-003 / superseded ADR-010).
 - Keep a single Leptos route tree and a single site chrome.
 - Site is diversified: new areas beyond blog/tools are allowed; register routes + header nav.
