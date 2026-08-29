@@ -21,9 +21,9 @@ use thaw::ConfigProvider;
 use thaw::ssr::SSRMountStyleProvider;
 
 use crate::pages::{
-    AdminGate, AdminLoginPage, AdminPostEditPage, AdminPostNewPage, AdminPostsPage, ArticlePage,
-    ArticlesIndexPage, BlogPage, BlogPostPage, HomePage, NotFoundPage, ToolsIndexPage,
-    ToolsPlaceholderPage,
+    AboutPage, AdminGate, AdminLoginPage, AdminPostEditPage, AdminPostNewPage, AdminPostsPage,
+    ArticlePage, ArticlesIndexPage, ClockPage, HomePage, LabPage, MusicPage, NotFoundPage,
+    RadarPage, ToolsIndexPage, ToolsPlaceholderPage,
 };
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
@@ -67,12 +67,15 @@ pub fn App() -> impl IntoView {
                 <SiteShell>
                     <Routes fallback=|| view! { <NotFoundPage /> }.into_any()>
                         <Route path=path!("") view=HomePage />
-                        <Route path=path!("blog") view=BlogPage />
-                        <Route path=path!("blog/:slug") view=BlogPostPage />
                         <Route path=path!("articles") view=ArticlesIndexPage />
                         <Route path=path!("articles/:slug") view=ArticlePage />
                         <Route path=path!("tools") view=ToolsIndexPage />
                         <Route path=path!("tools/echo") view=ToolsPlaceholderPage />
+                        <Route path=path!("radar") view=RadarPage />
+                        <Route path=path!("lab") view=LabPage />
+                        <Route path=path!("about") view=AboutPage />
+                        <Route path=path!("music") view=MusicPage />
+                        <Route path=path!("clock") view=ClockPage />
                         <Route path=path!("admin") view=AdminGate />
                         <Route path=path!("admin/login") view=AdminLoginPage />
                         <Route path=path!("admin/posts") view=AdminPostsPage />

@@ -96,6 +96,14 @@ jobs:
           tar -cf - -C . articles | \
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new "$VPS_USER@$VPS_HOST" \
             'mkdir -p /opt/rcrwhyg/site.staging && tar -C /opt/rcrwhyg/site.staging -xf -'
+          # data/ 单独流入 site.staging/data/（radar / lab / music JSON）
+          tar -cf - -C . data | \
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new "$VPS_USER@$VPS_HOST" \
+            'mkdir -p /opt/rcrwhyg/site.staging/data && tar -C /opt/rcrwhyg/site.staging/data -xf -'
+          # content/ 单独流入 site.staging/content/（about.md 等单文件内容）
+          tar -cf - -C . content | \
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new "$VPS_USER@$VPS_HOST" \
+            'mkdir -p /opt/rcrwhyg/site.staging/content && tar -C /opt/rcrwhyg/site.staging/content -xf -'
 
       - name: Swap + start + smoke + finalize
         run: |

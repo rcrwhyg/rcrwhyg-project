@@ -22,7 +22,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use leptos_axum::{LeptosRoutes, generate_route_list};
     use rcrwhyg_server::app::*;
     use rcrwhyg_server::server::{
-        AppState, global_rate_limit_middleware, health, sse_heartbeat, ws_echo,
+        AppState, blog_redirect_index, blog_redirect_slug, global_rate_limit_middleware, health,
+        sse_heartbeat, ws_echo,
     };
     use tokio::net::TcpListener;
 
@@ -51,6 +52,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/health", get(health))
         .route("/sse/heartbeat", get(sse_heartbeat))
         .route("/ws/echo", get(ws_echo))
+        // `/blog` → `/articles` (308 — preserves method, SEO-friendly).
+        .route("/blog", get(blog_redirect_index))
+        .route("/blog/{slug}", get(blog_redirect_slug))
         .fallback(leptos_axum::file_and_error_handler::<AppState, _>(shell))
         .layer(middleware::from_fn(strip_trailing_slash))
         .layer(middleware::from_fn(global_rate_limit_middleware))
