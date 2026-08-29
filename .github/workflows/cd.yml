@@ -40,25 +40,64 @@ jobs:
           targets: wasm32-unknown-unknown,x86_64-unknown-linux-musl
           components: rustfmt
 
-      - name: Cache cargo
+      - name: Cache cargo registry + build artifacts
         uses: Swatinem/rust-cache@v2
 
-      - name: Install cargo-leptos
-        run: cargo install --locked cargo-leptos
+      # ----- 工具安装（cargo-binstall 走预编译二进制，比 source build 快 3-5 倍） -----
+      # 之前每个 release 都要 cargo install 编译 cargo-leptos (≈3min) +
+      # cargo-zigbuild (≈2min)，合计 5 分钟；现在这三个二进制都走 cache +
+      # binstall（带 cargo install 兜底），缓存命中时几秒钟，缓存未命中时
+      # 也只需下载 ≈20MB 预编译。
+      - name: Cache cargo tools (cargo-binstall / cargo-leptos / cargo-zigbuild)
+        uses: actions/cache@v4
+        id: cargo-tools-cache
+        with:
+          path: |
+            ~/.cargo/bin/cargo-binstall
+            ~/.cargo/bin/cargo-leptos
+            ~/.cargo/bin/cargo-zigbuild
+          key: ${{ runner.os }}-cargo-tools-v2
 
-      - name: Install cargo-zigbuild
-        run: cargo install --locked cargo-zigbuild
+      - name: Install cargo-binstall
+        if: steps.cargo-tools-cache.outputs.cache-hit != 'true'
+        run: cargo install --locked cargo-binstall
 
-      - name: Install Zig (linker/cc for cargo-zigbuild)
+      - name: Install cargo-leptos (binstall with cargo install fallback)
+        if: steps.cargo-tools-cache.outputs.cache-hit != 'true'
+        run: |
+          cargo binstall cargo-leptos \
+            --no-confirm --strategies minimum-versions --locked || \
+            cargo install --locked cargo-leptos
+
+      - name: Install cargo-zigbuild (binstall with cargo install fallback)
+        if: steps.cargo-tools-cache.outputs.cache-hit != 'true'
+        run: |
+          cargo binstall cargo-zigbuild \
+            --no-confirm --strategies minimum-versions --locked || \
+            cargo install --locked cargo-zigbuild
+
+      # ----- Zig（prebuilt tarball，cache 整目录） -----
+      - name: Cache Zig
+        uses: actions/cache@v4
+        id: zig-cache
+        with:
+          path: /usr/local/lib/zig-x86_64-linux-0.16.0
+          key: zig-0.16.0-x86_64-linux
+
+      - name: Install Zig
+        if: steps.zig-cache.outputs.cache-hit != 'true'
         run: |
           ZIG_VER=0.16.0
           ZIG_DIR="/usr/local/lib/zig-x86_64-linux-${ZIG_VER}"
+          sudo mkdir -p /usr/local/lib
           curl -fsSLo /tmp/zig.tar.xz "https://ziglang.org/download/${ZIG_VER}/zig-x86_64-linux-${ZIG_VER}.tar.xz"
           sudo tar -xJf /tmp/zig.tar.xz -C /usr/local/lib
-          echo "${ZIG_DIR}" >> "$GITHUB_PATH"
-          # GITHUB_PATH only takes effect for LATER steps; call zig by full path here
           "${ZIG_DIR}/zig" version
-          "${ZIG_DIR}/zig" cc -v >/dev/null 2>&1 && echo "zig cc OK"
+
+      - name: Expose Zig in PATH (later steps)
+        run: |
+          ZIG_DIR="/usr/local/lib/zig-x86_64-linux-0.16.0"
+          echo "${ZIG_DIR}" >> "$GITHUB_PATH"
 
       - name: Build site (WASM + CSS)
         run: cargo leptos build --release
