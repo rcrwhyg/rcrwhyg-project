@@ -64,6 +64,12 @@
   --glass-border: rgba(255, 255, 255, 0.16);
   --glass-inner: rgba(255, 255, 255, 0.04);
 
+  /* 厚玻璃：给 site-header、list-card、page-panel 等"承载文字的
+     面板"用，免得文字直接落在 mint/sky/lavender 渐变上对比度差。
+     浅色主题下几乎不透，文字下层是稳定的浅色面。 */
+  --chrome-bg: rgba(13, 22, 20, 0.78);
+  --chrome-border: rgba(255, 255, 255, 0.14);
+
   /* 板块 accent（每个 section 一根色条 / 边缘光） */
   --section-accent: var(--accent);
 }
@@ -111,4 +117,7 @@
   --glass-bg-strong: rgba(255, 255, 255, 0.75);
   --glass-border: rgba(20, 43, 39, 0.10);
   --glass-inner: rgba(255, 255, 255, 0.5);
+
+  --chrome-bg: rgba(255, 255, 255, 0.86);
+  --chrome-border: rgba(20, 43, 39, 0.10);
 }

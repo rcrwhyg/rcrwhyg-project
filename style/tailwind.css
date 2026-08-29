@@ -140,16 +140,16 @@
   .font-display { font-family: var(--font-display); }
   .font-mono { font-family: var(--font-mono); }
 
-  /* ---- Header / footer shells (glass) ---- */
+  /* ---- Header / footer shells (chrome) ---- */
   .site-header {
     position: fixed;
     inset: 0 0 auto 0;
     z-index: 50;
     height: var(--site-header-h);
-    border-bottom: 1px solid var(--glass-border);
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid var(--chrome-border);
+    background: var(--chrome-bg);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
     box-shadow: var(--shadow-1);
   }
 
@@ -178,10 +178,10 @@
     position: relative;
     z-index: 10;
     margin-top: auto;
-    border-top: 1px solid var(--glass-border);
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px) saturate(180%);
+    border-top: 1px solid var(--chrome-border);
+    background: var(--chrome-bg);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
     padding: 2rem 1rem;
   }
 
@@ -425,72 +425,65 @@
     text-shadow: 0 0 10px var(--accent-glow);
   }
 
-  .section-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1.1rem;
-  }
-
-  /* ---- Hub hero (home) ---- */
-  .hub-hero {
+  /* ---- Section carousel (home hub) — infinite horizontal scroll ----
+     板块卡片排成一条，悬停暂停；track 内 items 复制一份做无缝头尾
+     相接循环。`mask-image` 让两端有 5% 软淡出，不显得硬切。 */
+  .section-carousel {
     position: relative;
-    border-radius: 1.1rem;
-    padding: 2rem 1.6rem;
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    box-shadow: var(--shadow-3), inset 0 1px 0 var(--glass-inner);
     overflow: hidden;
+    margin: 0 -1rem;
+    padding: 0.25rem 0;
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      transparent 0,
+      black 5%,
+      black 95%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      90deg,
+      transparent 0,
+      black 5%,
+      black 95%,
+      transparent 100%
+    );
   }
 
-  .hub-hero::after {
-    content: "";
-    position: absolute;
-    inset: auto -10% -40% -10%;
-    height: 60%;
-    background: radial-gradient(60% 100% at 30% 100%, var(--orb-a), transparent 60%),
-                radial-gradient(60% 100% at 80% 100%, var(--orb-b), transparent 60%);
-    filter: blur(8px);
-    pointer-events: none;
-  }
-
-  .hub-hero h1 {
-    font-family: var(--font-display);
-    font-size: clamp(1.8rem, 4.2vw, 2.6rem);
-    line-height: 1.15;
-    margin: 0 0 0.75rem;
-    letter-spacing: -0.01em;
-    color: var(--fg);
-  }
-
-  .hub-hero h1 .mint { color: var(--accent); }
-  .hub-hero h1 .sky  { color: var(--accent-2); }
-
-  .hub-hero p.lead {
-    color: var(--fg-muted);
-    font-size: 1rem;
-    max-width: 56ch;
-    margin: 0 0 1.25rem;
-  }
-
-  .hub-hero .meta-row {
+  .section-carousel__track {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    color: var(--fg-dim);
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
+    gap: 1.1rem;
+    width: max-content;
+    animation: section-carousel-scroll 40s linear infinite;
+    will-change: transform;
+  }
+
+  .section-carousel:hover .section-carousel__track,
+  .section-carousel:focus-within .section-carousel__track {
+    animation-play-state: paused;
+  }
+
+  .section-carousel .section-card {
+    flex: 0 0 280px;
+    width: 280px;
+  }
+
+  @keyframes section-carousel-scroll {
+    from { transform: translate3d(0, 0, 0); }
+    to   { transform: translate3d(-50%, 0, 0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .section-carousel__track { animation: none; }
   }
 
   /* ---- Page panel (subtle wrapper) ---- */
   .page-panel {
     position: relative;
     z-index: 1;
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    backdrop-filter: blur(20px) saturate(180%);
+    background: var(--chrome-bg);
+    border: 1px solid var(--chrome-border);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
     box-shadow: var(--shadow-2), inset 0 1px 0 var(--glass-inner);
     padding: 1.5rem;
     border-radius: 1rem;
@@ -498,12 +491,12 @@
 
   /* ---- List item cards (articles / blog) ---- */
   .list-card {
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
+    background: var(--chrome-bg);
+    border: 1px solid var(--chrome-border);
     border-radius: 0.85rem;
     padding: 1.1rem 1.2rem;
-    backdrop-filter: blur(16px) saturate(180%);
     -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(180%);
     box-shadow: var(--shadow-1);
     transition: box-shadow 200ms ease, border-color 200ms ease, transform 200ms ease;
   }
