@@ -13,9 +13,12 @@ fi
 missing=()
 for token in "${REQUIRED[@]}"; do
   escaped="${token//:/\\:}"
-  if ! grep -qF "$token" "$CSS" && ! grep -qF "$escaped" "$CSS"; then
-    missing+=("$token")
+  if grep -qF "$token" "$CSS" \
+    || grep -qF "$escaped" "$CSS" \
+    || grep -qE "\\.${escaped//./\\.}\\{" "$CSS"; then
+    continue
   fi
+  missing+=("$token")
 done
 
 if ((${#missing[@]})); then
