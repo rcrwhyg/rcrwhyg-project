@@ -24,6 +24,9 @@ env:
   # Pin build tools — install-action pulls prebuilt GitHub Release assets (seconds, not minutes).
   CARGO_LEPTOS_VERSION: '0.3.7'
   CARGO_ZIGBUILD_VERSION: '0.23.3'
+  # Pin tailwind CLI — cargo-leptos downloads on demand; preinstall avoids CI spawn ENOENT.
+  LEPTOS_TAILWIND_VERSION: 'v4.2.1'
+  TAILWIND_VERSION: 'v4.2.1'
 
 jobs:
   deploy-production:
@@ -81,6 +84,23 @@ jobs:
         run: |
           ZIG_DIR="/usr/local/lib/zig-x86_64-linux-0.16.0"
           echo "${ZIG_DIR}" >> "$GITHUB_PATH"
+
+      # cargo-leptos caches downloaded CLIs under ~/.cache/cargo-leptos.
+      - name: Cache cargo-leptos tool downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/cargo-leptos
+          key: cargo-leptos-tools-${{ runner.os }}-${{ env.LEPTOS_TAILWIND_VERSION }}
+
+      # cargo-leptos 0.3.7 parallel build can fail to spawn cached tailwindcss on GHA
+      # (sync.rs:83 ENOENT) even after "installed" log — put a global binary on PATH first.
+      - name: Install Tailwind CSS CLI (pinned)
+        run: |
+          curl -fsSLo /tmp/tailwindcss \
+            "https://github.com/tailwindlabs/tailwindcss/releases/download/${TAILWIND_VERSION}/tailwindcss-linux-x64"
+          chmod +x /tmp/tailwindcss
+          sudo mv /tmp/tailwindcss /usr/local/bin/tailwindcss
+          tailwindcss --help >/dev/null
 
       - name: Build site (WASM + CSS)
         run: cargo leptos build --release
