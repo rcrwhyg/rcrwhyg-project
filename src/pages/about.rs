@@ -8,10 +8,10 @@ pub fn AboutPage() -> impl IntoView {
     let content = Resource::new(|| (), |_| async move { get_about().await });
 
     view! {
-        <section class="page-panel mx-auto my-8 max-w-3xl px-4">
-            <h1 class="page-title mb-6">
-                <span class="accent">"关于"</span>
-            </h1>
+        // 跟其他公开页一致：section 套 page-panel 拿到 0.30 玻璃面，
+        // 文字落在稳定的"纸面"上而不是直接压到背景渐变上。
+        <section class="page-panel mx-auto my-8 max-w-4xl px-4">
+            // 不再展示 "关于" h1——直接呈现 markdown 内容。
             <Suspense fallback=move || {
                 view! { <p class="dim-text">"加载中…"</p> }
             }>

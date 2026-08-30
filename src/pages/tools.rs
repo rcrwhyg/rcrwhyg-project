@@ -4,29 +4,25 @@ use leptos_router::components::A;
 use crate::server::{db_status, server_ping};
 use crate::tools::registry::all_tools;
 
+/// `/tools` — 工具占位卡片列表。按反馈：保留卡片作为占位、移除
+/// 名称和介绍，背景更透明、能看到星星。
 #[component]
 pub fn ToolsIndexPage() -> impl IntoView {
     let tools = all_tools();
 
     view! {
-        <section class="page-panel mx-auto my-8 max-w-3xl px-4">
-            <h1 class="page-title mb-2">"工具集合"</h1>
-            <p class="mb-8 text-[color:var(--fg-muted)]">
-                "新工具通过 tools::registry 登记。点击进入占位页。"
-            </p>
-            <ul class="grid gap-4 sm:grid-cols-2">
+        <section class="mx-auto my-8 max-w-4xl px-4">
+            <ul class="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
                 {tools
                     .into_iter()
                     .map(|tool| {
                         view! {
-                            <li class="border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
-                                <h2 class="text-[color:var(--accent)]">{tool.title}</h2>
-                                <p class="mt-2 text-sm text-[color:var(--fg-muted)]">{tool.summary}</p>
+                            <li class="list-card flex items-center justify-center min-h-64">
                                 <A
                                     href=tool.path
-                                    attr:class="mt-3 inline-block text-sm text-[color:var(--link)]"
+                                    attr:class="link-text text-sm"
                                 >
-                                    "打开 →"
+                                    "示例工具 →"
                                 </A>
                             </li>
                         }
@@ -43,22 +39,22 @@ pub fn ToolsPlaceholderPage() -> impl IntoView {
     let db = Resource::new(|| (), |_| async move { db_status().await });
 
     view! {
-        <section class="page-panel mx-auto my-8 max-w-3xl px-4">
-            <h1 class="page-title mb-4">"echo · 占位工具"</h1>
-            <p class="text-[color:var(--fg-muted)]">
+        // 工具详情：用 page-panel 拿 0.30 玻璃面，文本落到稳定纸面
+        <section class="page-panel mx-auto my-8 max-w-4xl px-4">
+            <p class="dim-text">
                 "演示 Resource + Suspense、可选 Postgres context，以及 SSE / WebSocket 占位端点。"
             </p>
 
             <div class="mt-6 space-y-4">
-                <div class="border border-[color:var(--border)] p-4">
-                    <p class="mb-2 text-sm text-[color:var(--accent)]">"Suspense / server_ping"</p>
+                <div class="list-card">
+                    <p class="mb-2 text-sm dim-text">"Suspense / server_ping"</p>
                     <Suspense fallback=move || {
-                        view! { <p class="text-[color:var(--fg-dim)]">"loading…"</p> }
+                        view! { <p class="dim-text">"loading…"</p> }
                     }>
                         {move || match ping.get() {
                             Some(Ok(msg)) => view! { <p>{msg}</p> }.into_any(),
                             Some(Err(err)) => {
-                                view! { <p class="text-[color:var(--danger)]">{err.to_string()}</p> }
+                                view! { <p class="danger-text">{err.to_string()}</p> }
                                     .into_any()
                             }
                             None => view! { <p>"…"</p> }.into_any(),
@@ -66,15 +62,15 @@ pub fn ToolsPlaceholderPage() -> impl IntoView {
                     </Suspense>
                 </div>
 
-                <div class="border border-[color:var(--border)] p-4">
-                    <p class="mb-2 text-sm text-[color:var(--accent)]">"Suspense / db_status"</p>
+                <div class="list-card">
+                    <p class="mb-2 text-sm dim-text">"Suspense / db_status"</p>
                     <Suspense fallback=move || {
-                        view! { <p class="text-[color:var(--fg-dim)]">"checking db…"</p> }
+                        view! { <p class="dim-text">"checking db…"</p> }
                     }>
                         {move || match db.get() {
                             Some(Ok(msg)) => view! { <p>{msg}</p> }.into_any(),
                             Some(Err(err)) => {
-                                view! { <p class="text-[color:var(--danger)]">{err.to_string()}</p> }
+                                view! { <p class="danger-text">{err.to_string()}</p> }
                                     .into_any()
                             }
                             None => view! { <p>"…"</p> }.into_any(),
@@ -83,10 +79,10 @@ pub fn ToolsPlaceholderPage() -> impl IntoView {
                 </div>
             </div>
 
-            <ul class="mt-4 space-y-1 text-sm text-[color:var(--fg-dim)]">
+            <ul class="mt-4 space-y-1 text-sm dim-text">
                 <li>
                     "HTTP health："
-                    <a href="/health" class="text-[color:var(--link)]" target="_blank" rel="noreferrer">
+                    <a href="/health" class="link-text" target="_blank" rel="noreferrer">
                         "/health"
                     </a>
                 </li>
@@ -94,7 +90,7 @@ pub fn ToolsPlaceholderPage() -> impl IntoView {
                     "SSE："
                     <a
                         href="/sse/heartbeat"
-                        class="text-[color:var(--link)]"
+                        class="link-text"
                         target="_blank"
                         rel="noreferrer"
                     >

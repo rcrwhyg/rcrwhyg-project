@@ -3,39 +3,41 @@ use leptos_router::components::A;
 
 use crate::server::{LabEntry, list_lab};
 
-/// `/lab` — experiment / small demos (mint accent = action / interaction).
+/// `/lab` — 实验室。完全复用首页轮播的 section-card + s-mint
+/// 视觉（顶部 mint 色条 + 玻璃底框 + backdrop-filter），数据形状
+/// 由 LabEntry 提供 (stack / name / blurb / status / link)。
 #[component]
 pub fn LabPage() -> impl IntoView {
     let entries = Resource::new(|| (), |_| async move { list_lab().await });
 
     view! {
-        <section class="page-panel mx-auto my-8 max-w-3xl px-4">
-            <h1 class="page-title mb-2">
-                <span class="accent">"实验室"</span>
-            </h1>
-            <p class="mb-6 muted-text">
-                "实验 / demo / 小游戏。点开卡片进入对应实验。"
-            </p>
-
+        // /lab 列表页：去掉 page-panel 框，宽度 max-w-4xl 与首页一致。
+        <section class="mx-auto my-8 max-w-4xl px-4">
+            // 不再展示 h1 / 描述。
             <Suspense fallback=move || {
                 view! { <p class="dim-text">"加载中…"</p> }
             }>
                 {move || match entries.get() {
                     None => view! { <p class="dim-text">"加载中…"</p> }.into_any(),
                     Some(Err(err)) => view! {
-                        <p class="danger-text">{format!("加载失败：{err}")}</p>
-                    }
+                        <p class="danger-text">{format!("加载失败：{err}")}</p> }
                     .into_any(),
                     Some(Ok(items)) if items.is_empty() => view! {
                         <p class="dim-text">"暂无实验项目。"</p>
                     }
                     .into_any(),
                     Some(Ok(items)) => view! {
-                        <div class="section-grid">
-                            {items
-                                .into_iter()
-                                .map(|entry| view! { <LabCard entry=entry /> })
-                                .collect_view()}
+                        <div class="section-carousel">
+                            <div class="section-carousel__track">
+                                {items
+                                    .iter()
+                                    .map(|entry| view! { <LabCard entry=entry.clone() /> })
+                                    .collect_view()}
+                                {items
+                                    .iter()
+                                    .map(|entry| view! { <LabCard entry=entry.clone() /> })
+                                    .collect_view()}
+                            </div>
                         </div>
                     }
                     .into_any(),
@@ -52,11 +54,11 @@ fn LabCard(entry: LabEntry) -> impl IntoView {
     let status_text = entry.status.clone();
 
     view! {
-        <article class="lab-card">
-            <span class="stack">{entry.stack}</span>
+        <article class="section-card s-mint">
+            <span class="eyebrow">{entry.stack}</span>
             <h3>{entry.name}</h3>
             <p>{entry.blurb}</p>
-            <div class="mt-1 flex items-center justify-between">
+            <div class="mt-2 flex items-center justify-between">
                 <span class="tag">{status_text}</span>
                 <Show when=move || has_link fallback=|| ()>
                     <A

@@ -9,14 +9,10 @@ pub fn RadarPage() -> impl IntoView {
     let entries = Resource::new(|| (), |_| async move { list_radar().await });
 
     view! {
-        <section class="page-panel mx-auto my-8 max-w-3xl px-4">
-            <h1 class="page-title mb-2">
-                <span class="accent-2">"学习雷达"</span>
-            </h1>
-            <p class="mb-6 muted-text">
-                "多生态学习进度。色条=主色：薄荷=行动/深入，天空=信息/了解。"
-            </p>
-
+        // /radar 列表页：不再用 page-panel 框，宽度 max-w-4xl 与首页一致；
+        // 每行是独立的 radar-row（带 accent 色条 + frosted glass）。
+        <section class="mx-auto my-8 max-w-4xl space-y-3 px-4">
+            // 列表直接呈现，不再展示 "学习雷达" h1 / 描述——eyebrow 已经够。
             <Suspense fallback=move || {
                 view! { <p class="dim-text">"加载中…"</p> }
             }>
@@ -31,7 +27,7 @@ pub fn RadarPage() -> impl IntoView {
                     }
                     .into_any(),
                     Some(Ok(items)) => view! {
-                        <div class="space-y-3">
+                        <div class="space-y-5">
                             {items
                                 .into_iter()
                                 .map(|entry| view! { <RadarRow entry=entry /> })

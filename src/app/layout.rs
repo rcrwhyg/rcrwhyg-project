@@ -4,8 +4,8 @@ use leptos_router::components::A;
 use leptos_router::hooks::use_navigate;
 
 use crate::app::DynamicBackground;
-use crate::app::{clear_admin_session, use_admin_session, use_site_preference};
-use crate::components::{BeianFooter, ThemeControls};
+use crate::app::{clear_admin_session, use_admin_session};
+use crate::components::BeianFooter;
 use crate::server::admin_logout;
 
 #[component]
@@ -66,7 +66,6 @@ pub fn SiteHeader() -> impl IntoView {
                             "退出"
                         </button>
                     </Show>
-                    <ThemeControls />
                 </div>
             </div>
         </header>
@@ -75,21 +74,14 @@ pub fn SiteHeader() -> impl IntoView {
 
 #[component]
 pub fn SiteShell(children: Children) -> impl IntoView {
-    let preference = use_site_preference();
-
     view! {
-        <div
-            class="site-root min-h-screen"
-            data-theme=move || preference.theme.get().as_str()
-        >
+        <div class="site-root">
             <DynamicBackground />
             <SiteHeader />
-            <div class="site-body">
-                <main class="site-main">
-                    {children()}
-                    <BeianFooter />
-                </main>
-            </div>
+            <main class="site-main">
+                {children()}
+            </main>
+            <BeianFooter />
         </div>
     }
 }

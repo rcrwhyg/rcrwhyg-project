@@ -14,7 +14,9 @@ pub fn HomePage() -> impl IntoView {
         <div class="mx-auto my-12 max-w-4xl space-y-10 px-4">
             <SectionCarousel />
             <section>
-                <h2 class="section-title">"最近更新"</h2>
+                // 板块入口的横向轮播；section title 故意隐藏——板块语义
+                // 已经体现在每张 section-card 的 eyebrow (/articles, /tools...)
+                // 上，不需要重复章节标题。
                 <Suspense fallback=move || {
                     view! { <p class="dim-text">"加载中…"</p> }
                 }>
@@ -89,7 +91,8 @@ fn SectionCarousel() -> impl IntoView {
 
     view! {
         <section>
-            <h2 class="section-title">"板块"</h2>
+            // 板块卡用横向无限轮播呈现，section title 去掉——卡上已经写了
+            // /articles /tools /radar /lab /about，重复章节标题只是噪音。
             <div class="section-carousel">
                 <div class="section-carousel__track">
                     {ITEMS
@@ -163,7 +166,7 @@ fn RecentRow(item: RecentItem) -> impl IntoView {
                 <h2 class="text-base font-semibold">
                     <A
                         href=item.href
-                        attr:class="no-underline text-[color:var(--accent)] hover:text-[color:var(--link)]"
+                        attr:class="no-underline text-[color:var(--fg)] hover:text-[color:var(--fg-muted)]"
                     >
                         {title}
                     </A>

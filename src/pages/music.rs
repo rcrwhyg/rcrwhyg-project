@@ -10,14 +10,9 @@ pub fn MusicPage() -> impl IntoView {
     let entries = Resource::new(|| (), |_| async move { list_music().await });
 
     view! {
-        <section class="page-panel mx-auto my-8 max-w-3xl px-4">
-            <h1 class="page-title mb-2">
-                <span class="accent">"音乐"</span>
-            </h1>
-            <p class="mb-6 muted-text">
-                "氛围音乐 / 工作时听。优先嵌入第三方（Spotify / Apple Music），自托管次之。"
-            </p>
-
+        // /music 列表页：去掉 page-panel 框，宽度 max-w-4xl 与首页一致。
+        <section class="mx-auto my-8 max-w-4xl space-y-3 px-4">
+            // 不再展示 "音乐" h1 / 描述——直接呈现列表，card 内部已经带曲目信息。
             <Suspense fallback=move || {
                 view! { <p class="dim-text">"加载中…"</p> }
             }>
