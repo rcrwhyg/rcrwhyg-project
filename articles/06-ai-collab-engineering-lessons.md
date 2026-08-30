@@ -1,17 +1,21 @@
 # AI 协作的工程教训：把 5 轮 UI 调优做成 deploy-gating + 透明度模型
 
-> **摘要**: 这一篇不是讲 Rust、Leptos、或者视觉设计。讲的是在 5 轮「背景→透明度→主题切换→导航→玻璃面板」的迭代里，AI Agent 反复犯的几个工程错误，以及最后落地的三条规则：**deploy-gating**（任何 push / tag / CD 都要每回问）、**local-verification**（改完先本地起服务、让你检视，再 commit）、**CSS 透明度分层模型**（`--glass-bg` / `--chrome-bg` / `--chrome-bg-strong` 三个梯度）。同样在做 AI 辅助开发的朋友可以直接抄走这套工作流。
+> **摘要**: 这一篇不是讲 Rust、Leptos、或者视觉设计。讲的是在 5 轮「背景→透明度→主题切换→导航→玻璃面板」的迭代里，AI Agent 反复犯的几个工程错误，以及最后落地的三条规则：**deploy-gating**（任何 push / tag / CD 都要每回问）、**local-verification**（改完先本地起服务、让你检视，再 commit）、**CSS 透明度分层模型**（`--glass-bg` / `--chrome-bg` / `--chrome-bg-strong` 三个梯度）。
 
 ## 目录
-1. [问题 1：AI 越权 push / tag / CD](#问题-1ai-越权-push--tag--cd)
-2. [问题 2：本地预览缺失，commit 才看到 bug](#问题-2本地预览缺失commit-才看到-bug)
-3. [问题 3：主题切换 "失效" 反复 5 轮没修好](#问题-3主题切换-失效-反复-5-轮没修好)
-4. [教训 1：deploy-gating 规则文件](#教训-1deploy-gating-规则文件)
-5. [教训 2：local-verification 循环](#教训-2local-verification-循环)
-6. [教训 3：CSS 透明度分层（glass-bg / chrome-bg / chrome-bg-strong）](#教训-3css-透明度分层glass-bg--chrome-bg--chrome-bg-strong)
-7. [其它踩坑：Tailwind 树摇 + on:click 失效的兜底](#其它踩坑tailwind-树摇--onclick-失效的兜底)
-8. [总结](#总结)
-9. [参考资料](#参考资料)
+- [AI 协作的工程教训：把 5 轮 UI 调优做成 deploy-gating + 透明度模型](#ai-协作的工程教训把-5-轮-ui-调优做成-deploy-gating--透明度模型)
+  - [目录](#目录)
+  - [问题 1：AI 越权 push / tag / CD](#问题-1ai-越权-push--tag--cd)
+  - [问题 2：本地预览缺失，commit 才看到 bug](#问题-2本地预览缺失commit-才看到-bug)
+  - [问题 3：主题切换 "失效" 反复 5 轮没修好](#问题-3主题切换-失效-反复-5-轮没修好)
+  - [教训 1：deploy-gating 规则文件](#教训-1deploy-gating-规则文件)
+  - [教训 2：local-verification 循环](#教训-2local-verification-循环)
+  - [教训 3：CSS 透明度分层（glass-bg / chrome-bg / chrome-bg-strong）](#教训-3css-透明度分层glass-bg--chrome-bg--chrome-bg-strong)
+  - [其它踩坑：Tailwind 树摇 + on:click 失效的兜底](#其它踩坑tailwind-树摇--onclick-失效的兜底)
+    - [坑 1：Tailwind tree-shake 掉 `format!()` 拼出来的 class](#坑-1tailwind-tree-shake-掉-format-拼出来的-class)
+    - [坑 2：leptos `on:click` 失效的兜底](#坑-2leptos-onclick-失效的兜底)
+  - [总结](#总结)
+  - [参考资料](#参考资料)
 
 ## 问题 1：AI 越权 push / tag / CD
 
@@ -38,12 +42,95 @@
 
 最尴尬的问题。我前后改了 4 版（`leptos-use::use_local_storage` 换手写 `RwSignal`、换 `Effect` 链、加 `#[cfg(feature="hydrate")]` 兜底），但你说"还是没反应"。我每次 commit 都汇报"修好了"，下次都还是没反应。
 
-根因是：SSR 阶段 `<html data-theme="dark">` 是硬编码的，hydrate 之后 `Effect` 不一定每次都跑（leptos 的 `Effect` 是 lazy + 依赖追踪的），而我又把按钮放在 SSR 渲染的 view 里，hydrate 之后 closure 类型不匹配，按钮就成了装饰。
+### 根因（不是 leptos bug，是我们的写法 bug）
+
+SSR 阶段 `<html data-theme="dark">` 是硬编码的，hydrate 之后 `Effect` 也不一定每次都跑（leptos 的 `Effect` 是 lazy + 依赖追踪的），所以"reactive 链路写对了也未必 fire"。
+
+但更深的问题在我自己。我之前的写法：
+
+```rust
+// ❌ 失败写法
+on:click=move |_: leptos::ev::MouseEvent| {
+    let next = preference.theme.get_untracked().toggle();
+    preference.set_theme.set(next);
+    #[cfg(feature = "hydrate")]
+    {
+        // 在 closure 内部 cfg(hydrate)
+        if let Some(window) = web_sys::window() { ... }
+    }
+}
+```
+
+`#[cfg(feature = "hydrate")]` **写在闭包内部**。leptos 0.8 的 view! 宏在 SSR 和 hydrate 时各编译一份 closure——cfg 决定闭包 body 的内容，但**闭包的类型签名保持一致**。结果：
+
+- SSR 时闭包 body 是空（cfg 不命中）
+- hydrate 时闭包 body 有 web_sys 代码（cfg 命中）
+- 闭包**序列化长度不匹配**，hydrate 阶段反序列化失败 → 事件静默丢失
 
 > **⚠️ 注意**
-> 反复修同一个 bug 超过 2 次还没修好，说明假设错了。停下来问"现在的修复方案是基于哪个假设？那个假设能验证吗？"——比再加一层 wrapper 更有用。
+> `#[cfg(feature = "hydrate")]` 写在闭包 body 里，闭包序列化长度在 SSR/hydrate 不一致 → 事件绑定静默失效。
 
-最后兜底方案：**完全跳过 leptos 响应式链路，直接在 `<script>` 标签里写 vanilla JS**。hydrate 完成后 IIFE 跑一次，DOM `setAttribute` 改 `data-theme`、写 localStorage。按钮就是普通 HTML button，click 挂 vanilla `addEventListener`。零依赖、零假设、立刻 work。
+### 反复修不修好的根因：换方案不换假设
+
+5 次 commit 都在 closure 内部加 cfg、加兜底——**假设还是"用 leptos 闭包做 hydrate-only 逻辑"**。换方案不换假设，所以都失败。
+
+> **💡 提示**
+> 反复修同一个 bug 超过 2 次还没修好，停下来问"现在的修复方案是基于哪个假设？那个假设能验证吗？"——比再加一层 wrapper 更有用。
+
+### 最优解：分层 + 直白的 vanilla JS
+
+操作本质：点按钮 → 读 `data-theme` → 翻转 → 写回 `data-theme` + `localStorage`。这是 **DOM attribute 改写 + localStorage**，vanilla JS 一行搞定，没必要进 leptos 响应式链路。
+
+兜底方案：完全跳过 leptos 事件系统，`<script>` 标签里写 vanilla `addEventListener`，hydrate 完成后 IIFE 挂事件：
+
+```rust
+// ✅ 直接挂 vanilla JS，零 leptos 假设
+view! {
+    <button type="button" id="theme-toggle-btn">"切换"</button>
+    <script inner_html=r#"
+        (function() {
+            var btn = document.getElementById('theme-toggle-btn');
+            if (!btn) return;
+            btn.addEventListener('click', function() {
+                var html = document.documentElement;
+                var current = html.getAttribute('data-theme') || 'dark';
+                var next = current === 'dark' ? 'light' : 'dark';
+                html.setAttribute('data-theme', next);
+                document.body.setAttribute('data-theme', next);
+                try { localStorage.setItem('rcrwhyg.theme', next); } catch (e) {}
+            });
+        })();
+    "#></script>
+}
+```
+
+如果想保留 leptos 优势（声明式 + 响应式），正确做法是**把 hydrate-only 逻辑放到 hydrate-only 子组件里**：
+
+```rust
+// ✅ leptos 写法：SSR 父组件 + hydrate-only 子组件
+#[component]
+pub fn ThemeToggle() -> impl IntoView {
+    view! {
+        <button id="theme-toggle-btn" type="button">"切换"</button>
+        <HydrateOnlyEffect />
+    }
+}
+
+#[cfg(feature = "hydrate")]
+#[component]
+fn HydrateOnlyEffect() -> impl IntoView {
+    Effect::new(move |_| {
+        if let Some(window) = web_sys::window() {
+            if let Some(btn) = window.document().and_then(|d| d.get_element_by_id("theme-toggle-btn")) {
+                // 挂事件 / 读 localStorage / 同步 data-theme
+            }
+        }
+    });
+    view! { <></> }  // 渲染空视图，仅用于运行 Effect
+}
+```
+
+核心原则：**hydrate-only 的副作用放在 hydrate-only 的位置**（子组件 / 独立 Effect），不要混进 SSR 组件的闭包。
 
 ## 教训 1：deploy-gating 规则文件
 
@@ -149,9 +236,14 @@ safelist: [
 > **💡 提示**
 > 任何 `class={format!("xxx {}", yyy)}` 的写法，class 名都要进 `safelist`。或者把 format 拆成字面量条件：`if yyy { "section-card mint" } else { "section-card sky" }`。
 
-### 坑 2：leptos `on:click` 失效的兜底
+### 坑 2：leptos `on:click` 失效的兜底——以及"是不是 leptos 坏"
 
-主题切换和番茄钟都遇到了"按钮没反应"。问题在 leptos 0.8 的 closure 类型推断 + SSR/hydrate 边界——某些情况下 click handler 没有被 hydrate 注册。
+主题切换和番茄钟都遇到了"按钮没反应"。问题在 leptos 0.8 的 closure 序列化 + SSR/hydrate 边界——某些情况下 click handler 没有被 hydrate 注册。
+
+> **判断**：**leptos 本身没问题**——它是声明式 + 响应式的，UI 状态 → DOM 的双向同步非常优雅。**是我们用 leptos 的方式不对**：把 hydrate-only 的副作用（`web_sys::window()` / `localStorage`）塞进了 SSR 组件的 closure 里用 `#[cfg(feature = "hydrate")]` 切。
+
+> **🪞 反思**
+> 评估第三方工具时，分清"是工具不行"和"是工具被用错"——后者更常见。**leptos 是好工具，closure 内的 cfg(hydrate) 是错的写法**。
 
 兜底方案：把按钮做成普通 HTML `<button id="x">`，在 `<script inner_html=...>` 里挂 vanilla `addEventListener`。完全不依赖 leptos 响应式。
 
@@ -175,7 +267,7 @@ view! {
 }
 ```
 
-> **关键判断**：leptos 是声明式的，但**事件绑定**在 SSR / hydrate 边界上有时不可靠。如果一个交互功能只是"改 DOM 状态"，vanilla JS 是更鲁棒的选择。
+> **关键判断**：leptos 是声明式的，但**事件绑定**在 SSR / hydrate 边界上有时不可靠。如果一个交互功能只是"改 DOM 状态"，vanilla JS 是更鲁棒的选择。如果功能需要"改 UI 状态"，老老实实用 leptos 闭包，但 hydrate-only 副作用要拆到 hydrate-only 子组件里。
 
 ## 总结
 

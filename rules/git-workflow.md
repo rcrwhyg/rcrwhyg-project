@@ -66,6 +66,12 @@
 - 本地 commit / build / 测试 / 起 dev server：仍走门禁，**不**需要逐次问
 - 完整规则见 [`rules/deploy-gating.md`](deploy-gating.md)
 
+## 其它相关规则
+
+- [`rules/local-verification.md`](local-verification.md) — 改完必须本地起服务、让你检视
+- [`rules/leptos-ssr-hydrate.md`](leptos-ssr-hydrate.md) — `#[cfg(feature = "hydrate")]` 不能写在 view! 闭包 body 里
+- `tailwind.config.js` `safelist` — `format!()` 拼出来的 class 必须列出，否则被 tree-shake
+
 ## 开源仓库注意事项
 
 - 本仓库在 GitHub **公开**：任何提交前确认不含凭据、内网地址、个人信息（pre-commit 会兜底扫描）
