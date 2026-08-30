@@ -49,6 +49,7 @@ web-sys = { version = "0.3", optional = true, features = [
     "Document",
     "Element",
     "MouseEvent",
+    "Storage",
 ] }
 argon2 = { version = "0.5.3", features = ["std"], optional = true }
 sha2 = { version = "0.10", optional = true }
