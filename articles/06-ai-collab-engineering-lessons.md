@@ -104,33 +104,74 @@ view! {
 }
 ```
 
-如果想保留 leptos 优势（声明式 + 响应式），正确做法是**把 hydrate-only 逻辑放到 hydrate-only 子组件里**：
+### 补：leptos 真的能修好（写作时的诚实澄清）
+
+之前的文章 + 规则说"vanilla JS 是兜底、leptos 没能修好"——这个归因**不准确**。准确说法是：
+
+> **leptos 修得对**。我之前 5 次都修不好是因为我把 cfg 写在**闭包 body 里**，触发 SSR/hydrate 闭包序列化长度不一致。
+> **vanilla JS 不是兜底，是合理的工具选择**——改 DOM attribute 这种 imperative 操作，vanilla JS 比 leptos 闭包 + Effect 更直接。
+
+如果想保留 leptos 优势（声明式 + 响应式），正确写法是**闭包保持纯 leptos 类型，cfg 放进独立辅助函数**：
 
 ```rust
-// ✅ leptos 写法：SSR 父组件 + hydrate-only 子组件
+// ✅ 正确 leptos 写法：闭包纯 leptos，cfg 在辅助函数里
 #[component]
-pub fn ThemeToggle() -> impl IntoView {
+pub fn ThemeControls() -> impl IntoView {
+    let theme = RwSignal::new(ThemeMode::Dark);
+
+    // 闭包零 cfg，SSR/hydrate 签名完全一致
+    let on_click = move |_| {
+        theme.update(|t| *t = t.toggle());
+    };
+
+    // Effect 调一个 cfg-包过的辅助函数
+    Effect::new(move |_| {
+        apply_theme_to_dom(theme.get());
+    });
+
     view! {
-        <button id="theme-toggle-btn" type="button">"切换"</button>
-        <HydrateOnlyEffect />
+        <button on:click=on_click class="control-btn">
+            {move || match theme.get() {
+                ThemeMode::Dark => "切换亮色",
+                ThemeMode::Light => "切换暗色",
+            }}
+        </button>
     }
 }
 
-#[cfg(feature = "hydrate")]
-#[component]
-fn HydrateOnlyEffect() -> impl IntoView {
-    Effect::new(move |_| {
+// cfg 整个在函数体里，不在闭包里
+fn apply_theme_to_dom(t: ThemeMode) {
+    #[cfg(feature = "hydrate")]
+    {
         if let Some(window) = web_sys::window() {
-            if let Some(btn) = window.document().and_then(|d| d.get_element_by_id("theme-toggle-btn")) {
-                // 挂事件 / 读 localStorage / 同步 data-theme
+            if let Some(html) = window.document_element() {
+                let _ = html.set_attribute("data-theme", t.as_str());
+            }
+            if let Some(body) = window.body() {
+                let _ = body.set_attribute("data-theme", t.as_str());
+            }
+            if let Ok(Some(storage)) = window.local_storage() {
+                let _ = storage.set_item("rcrwhyg.theme", t.as_str());
             }
         }
-    });
-    view! { <></> }  // 渲染空视图，仅用于运行 Effect
+    }
+    // SSR 阶段 no-op（html 已经在 shell 里 hardcode data-theme="dark"）
 }
 ```
 
-核心原则：**hydrate-only 的副作用放在 hydrate-only 的位置**（子组件 / 独立 Effect），不要混进 SSR 组件的闭包。
+### 选哪个？
+
+| 场景 | 推荐 |
+|------|------|
+| **改 DOM attribute / localStorage**（imperative 操作） | **vanilla JS inline script**——10 行 JS 比 20+ 行 leptos 闭包 + Effect + 辅助函数更直接 |
+| **改 UI 状态影响 leptos 组件重新渲染** | leptos RwSignal + 闭包 + Effect——leptos 的核心价值在这里 |
+| 团队成员对 leptos SSR/hydrate 边界理解不深 | vanilla JS——避免"闭包序列化长度"这个坑 |
+
+> **🪞 反思**
+> 评估"vanilla JS vs leptos 闭包"这种选择时，分清**问题域本质**：
+> - 状态影响 UI 重渲染 → leptos 优势明显
+> - 操作 DOM attribute / localStorage → vanilla JS 真的更直接
+> 不是"兜底"vs"正经"，是**不同问题用不同工具**。我之前把 vanilla JS 误称"兜底"是叙事错误。
 
 ## 教训 1：deploy-gating 规则文件
 

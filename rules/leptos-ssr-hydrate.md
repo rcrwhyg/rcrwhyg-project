@@ -11,7 +11,8 @@
 
 1. 整个 `#[component]` 函数的 cfg 标注（`#[cfg(feature = "hydrate")] #[component] fn ...`）
 2. 独立 `Effect::new(...)` 块的 cfg 标注（`#[cfg(feature = "hydrate")] { Effect::new(...) }`）
-3. 整个 `view! { ... }` 块的 cfg 标注
+3. **整个辅助函数的 cfg 标注**（`#[cfg(feature = "hydrate")] fn apply_xxx() { ... }`）—— Effect 调这个函数
+4. 整个 `view! { ... }` 块的 cfg 标注
 
 ## 为什么
 
@@ -79,7 +80,44 @@ fn HydrateOnlyEffect() -> impl IntoView {
 }
 ```
 
-## 对写法 C：DOM 操作直接用 vanilla JS（推荐用于"改 DOM attribute / localStorage"类操作）
+## 对写法 C：cfg 在辅助函数里（Effect 调辅助函数）
+
+```rust
+// ✅ closure 零 cfg，cfg 整块在辅助函数
+#[component]
+pub fn ThemeControls() -> impl IntoView {
+    let theme = RwSignal::new(ThemeMode::Dark);
+
+    let on_click = move |_| {
+        theme.update(|t| *t = t.toggle());   // 闭包零 cfg
+    };
+
+    Effect::new(move |_| {
+        apply_theme_to_dom(theme.get());      // 调辅助函数
+    });
+
+    view! {
+        <button on:click=on_click class="control-btn">
+            {move || match theme.get() { ... }}
+        </button>
+    }
+}
+
+#[cfg(feature = "hydrate")]
+fn apply_theme_to_dom(t: ThemeMode) {
+    // 整个函数在 SSR 阶段不存在，hydrate 阶段才有 web_sys 代码
+    if let Some(window) = web_sys::window() {
+        if let Some(html) = window.document_element() {
+            let _ = html.set_attribute("data-theme", t.as_str());
+        }
+        if let Some(storage) = window.local_storage() {
+            let _ = storage.set_item("rcrwhyg.theme", t.as_str());
+        }
+    }
+}
+```
+
+## 对写法 D：DOM 操作直接用 vanilla JS（推荐用于"改 DOM attribute / localStorage"类操作）
 
 ```rust
 // ✅ 改 DOM attribute 这种操作本身就是 vanilla JS 风格，不进 leptos 链路
@@ -102,9 +140,16 @@ view! {
 
 | 场景 | 推荐方案 |
 |------|----------|
-| 改 DOM attribute / localStorage | 写法 C（vanilla JS inline script） |
-| 需要响应式更新 leptos 状态 | 写法 B（hydrate-only 子组件） |
-| 整块逻辑只在 hydrate 时跑 | 写法 A（cfg 整块） |
+| 改 DOM attribute / localStorage（imperative 操作） | 写法 D（vanilla JS inline script）——10 行 JS 比 20+ 行 leptos 闭包 + Effect + 辅助函数更直接 |
+| 需要响应式更新 leptos 状态影响 UI 重渲染 | 写法 C（RwSignal + Effect + cfg 辅助函数）——闭包零 cfg，签名 SSR/hydrate 一致 |
+| 整块逻辑只在 hydrate 时跑 | 写法 A（cfg 整块函数） |
+| hydrate-only 副作用需要复用 | 写法 B（cfg 整块子组件） |
+
+**关键判断**：
+- "改 DOM attribute / localStorage" 这种 **imperative 操作** → vanilla JS 真的更直接
+- "改 UI 状态影响 leptos 组件重渲染" → leptos 的核心价值
+- **不是"兜底"vs"正经"**——是**不同问题用不同工具**
+- 之前我说"vanilla JS 是兜底"是叙事错误。准确说法：**leptos 修得对，但 vanilla JS 在这个具体场景里更轻**
 
 ## 检测方法
 

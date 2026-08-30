@@ -1,9 +1,7 @@
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-use codee::string::FromToStringCodec;
 use leptos::prelude::*;
-use leptos_use::storage::use_local_storage;
 use thaw::Theme;
 
 /// Only dark / light — no other style modes.
@@ -61,31 +59,67 @@ pub struct SitePreference {
     pub thaw_theme: RwSignal<Theme>,
 }
 
-pub fn provide_site_preference() {
-    let (theme, set_theme, _) = use_local_storage::<ThemeMode, FromToStringCodec>("rcrwhyg.theme");
+/// hydrate 模式：从 local storage 读用户上次选的主题。SSR 用默认值。
+#[cfg(feature = "hydrate")]
+fn read_initial_from_storage() -> ThemeMode {
+    let Some(window) = web_sys::window() else {
+        return ThemeMode::default();
+    };
+    let Ok(Some(storage)) = window.local_storage() else {
+        return ThemeMode::default();
+    };
+    let Ok(Some(s)) = storage.get_item("rcrwhyg.theme") else {
+        return ThemeMode::default();
+    };
+    s.parse::<ThemeMode>().unwrap_or_default()
+}
 
-    let thaw_theme = RwSignal::new(theme.get_untracked().to_thaw());
+#[cfg(not(feature = "hydrate"))]
+fn read_initial_from_storage() -> ThemeMode {
+    ThemeMode::default()
+}
+
+/// hydrate 模式：写 local storage + 把 data-theme 同步到 <html>/<body>。
+/// SSR 是 no-op。
+#[cfg(feature = "hydrate")]
+fn persist_and_apply(theme: ThemeMode) {
+    let Some(window) = web_sys::window() else {
+        return;
+    };
+    if let Ok(Some(storage)) = window.local_storage() {
+        let _ = storage.set_item("rcrwhyg.theme", theme.as_str());
+    }
+    if let Some(document) = window.document() {
+        if let Some(html) = document.document_element() {
+            let _ = html.set_attribute("data-theme", theme.as_str());
+        }
+        if let Some(body) = document.body() {
+            let _ = body.set_attribute("data-theme", theme.as_str());
+        }
+    }
+}
+
+#[cfg(not(feature = "hydrate"))]
+fn persist_and_apply(_theme: ThemeMode) {}
+
+/// 主题上下文。注：之前用 leptos-use 的 use_local_storage，跨 tab
+/// 同步没问题但同 tab 内的 Signal 同步不稳——Effect 不会重跑、html
+/// data-theme 不会变。换成手写的 RwSignal + 手动持久化 + html attr，
+/// 一次走通、不再依赖第三方 hook 的内部行为。
+pub fn provide_site_preference() {
+    let initial = read_initial_from_storage();
+    let theme = RwSignal::new(initial);
+    let thaw_theme = RwSignal::new(initial.to_thaw());
 
     Effect::new(move |_| {
         let theme_value = theme.get();
         thaw_theme.set(theme_value.to_thaw());
-
-        #[cfg(feature = "hydrate")]
-        {
-            if let Some(document) = web_sys::window().and_then(|w| w.document()) {
-                if let Some(html) = document.document_element() {
-                    let _ = html.set_attribute("data-theme", theme_value.as_str());
-                }
-                if let Some(body) = document.body() {
-                    let _ = body.set_attribute("data-theme", theme_value.as_str());
-                }
-            }
-        }
+        persist_and_apply(theme_value);
     });
 
     provide_context(SitePreference {
-        theme,
-        set_theme,
+        theme: theme.into(),
+        set_theme: theme.write_only(),
         thaw_theme,
     });
 }
