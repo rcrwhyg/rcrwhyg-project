@@ -31,6 +31,7 @@ case "$cmd" in
       if curl -fsS -o /dev/null "http://127.0.0.1:3000/health" 2>/dev/null; then
         curl -fsS "http://127.0.0.1:3000/health"; echo
         curl -fsS -o /dev/null "http://127.0.0.1:3000/"
+        curl -fsS -o /dev/null "http://127.0.0.1:3000/articles"
         echo "smoke OK"; exit 0
       fi
       sleep 1

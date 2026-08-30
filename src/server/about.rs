@@ -22,7 +22,7 @@ pub async fn get_about() -> Result<Option<AboutContent>, ServerFnError> {
                 return Ok(None);
             }
         };
-        let body_html = super::posts::markdown_to_html(&raw);
+        let body_html = super::markdown::markdown_to_html(&raw);
         if body_html.trim().is_empty() {
             return Ok(None);
         }
@@ -40,7 +40,7 @@ mod tests {
     fn markdown_to_html_handles_about_markdown() {
         // Same renderer used by `get_about` and `get_site_article`.
         let md = "## 创刊叙事\n\n一个站点。\n\n## 联系方式\n\n- 邮件\n";
-        let html = super::super::posts::markdown_to_html(md);
+        let html = crate::server::markdown::markdown_to_html(md);
         assert!(html.contains("<h2>创刊叙事</h2>"));
         assert!(html.contains("<ul>"));
     }

@@ -35,7 +35,6 @@ pub fn SiteHeader() -> impl IntoView {
                         <Show when=move || logged_in.get() fallback=|| ()>
                             <span class="text-[color:var(--fg-dim)]" aria-hidden="true">"·"</span>
                             <A href="/admin" attr:class="nav-link nav-link-admin">"后台"</A>
-                            <A href="/admin/posts" attr:class="nav-link nav-link-admin">"文章"</A>
                         </Show>
                     </nav>
                 </div>
@@ -75,7 +74,7 @@ pub fn SiteHeader() -> impl IntoView {
 #[component]
 pub fn SiteShell(children: Children) -> impl IntoView {
     view! {
-        <div class="site-root">
+        <div class="site-root" data-theme="dark">
             <DynamicBackground />
             <SiteHeader />
             <main class="site-main">

@@ -1,6 +1,5 @@
 mod about;
 mod admin;
-mod admin_posts;
 mod articles;
 mod clock;
 mod home;
@@ -12,7 +11,6 @@ mod tools;
 
 pub use about::AboutPage;
 pub use admin::{AdminGate, AdminLoginPage};
-pub use admin_posts::{AdminPostEditPage, AdminPostNewPage, AdminPostsPage};
 pub use articles::{ArticlePage, ArticlesIndexPage};
 pub use clock::ClockPage;
 pub use home::HomePage;

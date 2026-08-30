@@ -4,7 +4,7 @@ use leptos::prelude::*;
 pub fn BeianFooter() -> impl IntoView {
     view! {
         <footer class="site-footer">
-            <div class="mx-auto max-w-5xl space-y-2 px-4 text-center text-sm muted-text">
+            <div class="mx-auto max-w-5xl space-y-2 px-4 text-center text-sm">
                 <p>"Copyright © 2026. All Rights Reserved."</p>
                 <div class="flex flex-wrap items-center justify-center gap-x-6 gap-y-1">
                     <a

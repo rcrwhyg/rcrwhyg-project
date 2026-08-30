@@ -9,7 +9,7 @@ pub use admin_session::{
 };
 pub use dynamic_bg::DynamicBackground;
 pub use layout::{SiteHeader, SiteShell};
-pub use theme::{SitePreference, ThemeMode, provide_site_preference, use_site_preference};
+pub use theme::{SitePreference, provide_site_preference, use_site_preference};
 
 use leptos::prelude::*;
 use leptos_meta::{MetaTags, Stylesheet, Title, provide_meta_context};
@@ -21,9 +21,8 @@ use thaw::ConfigProvider;
 use thaw::ssr::SSRMountStyleProvider;
 
 use crate::pages::{
-    AboutPage, AdminGate, AdminLoginPage, AdminPostEditPage, AdminPostNewPage, AdminPostsPage,
-    ArticlePage, ArticlesIndexPage, ClockPage, HomePage, LabPage, MusicPage, NotFoundPage,
-    RadarPage, ToolsIndexPage, ToolsPlaceholderPage,
+    AboutPage, AdminGate, AdminLoginPage, ArticlePage, ArticlesIndexPage, ClockPage, HomePage,
+    LabPage, MusicPage, NotFoundPage, RadarPage, ToolsIndexPage, ToolsPlaceholderPage,
 };
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
@@ -44,7 +43,7 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                     <HydrationScripts options />
                     <MetaTags />
                 </head>
-                <body>
+                <body data-theme="dark">
                     <App />
                 </body>
             </html>
@@ -78,9 +77,6 @@ pub fn App() -> impl IntoView {
                         <Route path=path!("clock") view=ClockPage />
                         <Route path=path!("admin") view=AdminGate />
                         <Route path=path!("admin/login") view=AdminLoginPage />
-                        <Route path=path!("admin/posts") view=AdminPostsPage />
-                        <Route path=path!("admin/posts/new") view=AdminPostNewPage />
-                        <Route path=path!("admin/posts/:id/edit") view=AdminPostEditPage />
                     </Routes>
                 </SiteShell>
             </Router>

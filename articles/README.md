@@ -9,9 +9,13 @@
 
 ## 目录结构
 
-- `articles/`：文章文件目录（`NN-slug.md` 编号递增）
-- `articles/templates/`：模板目录，不参与发布，不参与静态检查
-- 静态门禁：`tools/check-articles.sh`（pre-commit / pre-push / CI 自动执行）
+- `articles/`：文章根目录
+- `articles/<合集目录>/`：一个合集（子目录名是 slug，展示名在 `_meta.json`）
+  - `_meta.json`：`{ "title": "合集名", "order": 1 }`；占位合集加 `"placeholder": true`
+  - `NN-slug.md`：合集内文章（编号在合集内递增）
+- `articles/templates/`：模板，不参与发布
+- 根目录下的 `NN-slug.md`：无合集归属的随笔
+- 静态门禁：`tools/check-articles.sh`
 - 审核记录：`docs/article-reviews.md`
 - 规范：`rules/content-quality.md`、`specs/article-template.md`
 
@@ -25,15 +29,28 @@
 
 | 编号 | 文件 | 标题 | 状态 | 个人网站发布日 | 公众号转载日 |
 |------|------|------|------|---------------|--------------|
-| 01 | [01-the-modest-start.md](01-the-modest-start.md) | 朴素的启程：从一台 2C2G 服务器开始 | 已发布 | — | 2026-02-28 |
-| 02 | [02-deploy-full-stack-part-1.md](02-deploy-full-stack-part-1.md) | 如何完成全栈应用线上部署？（一）：让 2C2G 服务器跑得更稳 | 已发布 | — | 2026-03-12 |
-| 03 | [03-deploy-full-stack-part-2.md](03-deploy-full-stack-part-2.md) | 如何完成全栈应用线上部署？（二）：Caddy 网关与首次上线 | 待审核（系列一收官） | — | — |
-| 06 | [06-ai-collab-engineering-lessons.md](06-ai-collab-engineering-lessons.md) | AI 协作的工程教训：把 5 轮 UI 调优做成 deploy-gating + 透明度模型 | 待审核 | — | — |
+| 01 | [2c2g-server/01-the-modest-start.md](2c2g-server/01-the-modest-start.md) | 朴素的启程：从一台 2C2G 服务器开始 | 已发布 | — | 2026-02-28 |
+| 02 | [2c2g-server/02-deploy-full-stack-part-1.md](2c2g-server/02-deploy-full-stack-part-1.md) | 如何完成全栈应用线上部署？（一）：让 2C2G 服务器跑得更稳 | 已发布 | — | 2026-03-12 |
+| 03 | [2c2g-server/03-deploy-full-stack-part-2.md](2c2g-server/03-deploy-full-stack-part-2.md) | 如何完成全栈应用线上部署？（二）：Caddy 网关与首次上线 | 待审核（系列一收官） | — | — |
+| 06 | [2c2g-server/06-ai-collab-engineering-lessons.md](2c2g-server/06-ai-collab-engineering-lessons.md) | AI 协作的工程教训：把 5 轮 UI 调优做成 deploy-gating + 透明度模型 | 待审核 | — | — |
 
 > 01、02 在"网站首发"模型确立前以公众号【如春日午后阳光】首发（日期见上）；本仓库内的 Markdown 是按统一规范整理的 canonical 副本。如需在个人网站补发，可直接用本仓库文件发布，届时回填"个人网站发布日"列并更新 permalink。
 >
 > 系列规划：01/02/03 属于"全栈部署（手工）"系列，03 收束并衔接 04；04 起开启"重建与持续部署"系列。
 
-## 与站点博客（posts）的关系
+## 与站点文章系统
 
-站点博客的事实源是 `posts`（数据库 + `/admin`，见 ADR-002/011）；`articles/` 是**个人网站首发稿**（canonical），独立维护、可与博客互相改写，不强制同步。
+`articles/` 是站点**唯一**的内容事实源：git 管理、CD 部署、前台 `/articles` 渲染。管理员登录（`/admin`）用于站点运维，**不在浏览器内编辑文章**——撰写与发布在仓库内完成。
+
+### 当前合集
+
+| 目录 | 展示名 | 说明 |
+|------|--------|------|
+| `2c2g-server/` | 拥有一台 2C2G 的服务器，能做点什么？ | 现有 01–06 文章 |
+| `cangjie-learn/` | 系统学习仓颉编程语言 | 占位，待从开源项目同步 |
+
+### 排序规则（前台）
+
+1. 仅展示 `NN-slug.md` 且未标记 `> **站点发布**: 否` 的文件
+2. 倒序：文件名编号 → 版本日期 → slug
+3. 合集名来自子目录 `_meta.json`，列表右上角徽章展示

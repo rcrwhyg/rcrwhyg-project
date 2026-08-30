@@ -1,6 +1,4 @@
-/* 薄荷绿 (mint) + 天空蓝 (sky) 设计令牌 — dark / light 双套。
-   立体感 = 4 档阴影；光亮 = mint / sky 边缘光晕；表面 = 全站玻璃面。
-   视觉参考：docs/palette-preview.html（与本文件一一对应）。 */
+/* 薄荷绿 (mint) + 天空蓝 (sky) 设计令牌 — 生产站点固定 dark；light 块仅供 palette-preview。 */
 
 :root {
   --site-header-h: 3.75rem;
@@ -122,9 +120,9 @@
   --glass-border: rgba(20, 43, 39, 0.10);
   --glass-inner: rgba(255, 255, 255, 0.5);
 
-  --chrome-bg: rgba(255, 255, 255, 0.55);
+  --chrome-bg: rgba(255, 255, 255, 0.30);
   --chrome-border: rgba(20, 43, 39, 0.12);
 
-  --chrome-bg-strong: rgba(255, 255, 255, 0.70);
+  --chrome-bg-strong: rgba(255, 255, 255, 0.50);
   --chrome-border-strong: rgba(20, 43, 39, 0.16);
 }

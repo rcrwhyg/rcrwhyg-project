@@ -76,7 +76,7 @@ fn MusicRow(entry: MusicEntry) -> impl IntoView {
     };
 
     view! {
-        <article class="music-row">
+        <article class="list-card music-row">
             <header class="flex items-baseline justify-between gap-3">
                 <h3>{title}</h3>
                 <span class="artist">{artist}</span>

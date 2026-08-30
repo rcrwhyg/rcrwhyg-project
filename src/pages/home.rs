@@ -3,9 +3,6 @@ use leptos_router::components::A;
 
 use crate::server::{RecentItem, recent_items};
 
-/// `/` — hub. 板块入口用无限横向滚动轮播 + 最近更新 + 顶/底留白
-/// 都重做了一遍（issues 1-8 反馈的落实）。原 hub-hero + tool-footer
-/// 删了；板块卡片在 CSS-only 无限轮播里循环（hover 暂停）。
 #[component]
 pub fn HomePage() -> impl IntoView {
     let recent = Resource::new(|| (), |_| async move { recent_items().await });
@@ -14,9 +11,6 @@ pub fn HomePage() -> impl IntoView {
         <div class="mx-auto my-12 max-w-4xl space-y-10 px-4">
             <SectionCarousel />
             <section>
-                // 板块入口的横向轮播；section title 故意隐藏——板块语义
-                // 已经体现在每张 section-card 的 eyebrow (/articles, /tools...)
-                // 上，不需要重复章节标题。
                 <Suspense fallback=move || {
                     view! { <p class="dim-text">"加载中…"</p> }
                 }>
@@ -46,9 +40,6 @@ pub fn HomePage() -> impl IntoView {
     }
 }
 
-/// 板块横向无限轮播。track 里塞 2 份同样的 5 张 section-card
-/// （CSS 关键帧把 track translateX 从 0 滚到 -50%，正好一份
-/// 原始宽度的距离，过渡到 0% 时刚好是循环起点）。
 #[component]
 fn SectionCarousel() -> impl IntoView {
     const ITEMS: [SectionItem; 5] = [
@@ -91,8 +82,6 @@ fn SectionCarousel() -> impl IntoView {
 
     view! {
         <section>
-            // 板块卡用横向无限轮播呈现，section title 去掉——卡上已经写了
-            // /articles /tools /radar /lab /about，重复章节标题只是噪音。
             <div class="section-carousel">
                 <div class="section-carousel__track">
                     {ITEMS
@@ -144,16 +133,6 @@ struct SectionItem {
 
 #[component]
 fn RecentRow(item: RecentItem) -> impl IntoView {
-    let kind_label = if item.kind == "article" {
-        "文章"
-    } else {
-        "工具"
-    };
-    let kind_class = if item.kind == "article" {
-        "tag"
-    } else {
-        "tag sky"
-    };
     let title = item.title.clone();
     let summary = item.summary.clone().unwrap_or_default();
     let has_summary = !summary.is_empty();
@@ -171,7 +150,7 @@ fn RecentRow(item: RecentItem) -> impl IntoView {
                         {title}
                     </A>
                 </h2>
-                <span class=kind_class>{kind_label}</span>
+                <span class="tag">"文章"</span>
             </div>
             <Show when=move || has_date fallback=|| ()>
                 <p class="mt-1 text-sm dim-text font-mono">{date.clone()}</p>

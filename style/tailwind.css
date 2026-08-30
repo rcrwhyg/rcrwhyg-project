@@ -6,19 +6,13 @@
 
 @layer base {
   html {
+    height: 100%;
     color-scheme: dark;
-  }
-
-  html[data-theme="light"],
-  body[data-theme="light"],
-  .site-root[data-theme="light"] {
-    color-scheme: light;
   }
 
   body {
     margin: 0;
-    /* 视口减去 header 高度 —— 否则短页面 footer 会被推到视口外 */
-    min-height: calc(100vh - var(--site-header-h));
+    min-height: 100%;
     background: var(--bg);
     color: var(--fg);
     font-family: var(--font-body);
@@ -27,25 +21,26 @@
 }
 
 @layer components {
-  /* ---- Root layout: flex column so footer stays at the bottom ---- */
+  /* ---- Root layout: flex column; header fixed; footer stays in viewport ---- */
   .site-root {
     position: relative;
     isolation: isolate;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    min-height: 100dvh;
   }
 
   .site-main {
-    flex: 1;
+    flex: 1 0 auto;
     position: relative;
     z-index: 1;
+    /* 为 fixed header 留出内容起始位置 */
     padding-top: var(--site-header-h);
     box-sizing: border-box;
-    min-height: 0;
   }
 
-  /* 旧 .site-body 不再使用；保留空 class 以防外部链接依赖 */
+  /* 旧 .site-body 不再使用 */
   .site-body { display: contents; }
 
   /* ---- Section carousel (home hub) — 无限横向滚动 ---- */
@@ -227,27 +222,20 @@
     padding: 0 1rem;
   }
 
-  .site-body {
-    position: relative;
-    z-index: 1;
-    padding-top: var(--site-header-h);
-    min-height: 100vh;
-    box-sizing: border-box;
-  }
-
-  .site-main {
-    min-height: calc(100vh - var(--site-header-h));
-  }
-
   .site-footer {
+    flex-shrink: 0;
     position: relative;
     z-index: 10;
-    margin-top: auto;
-    border-top: 1px solid var(--chrome-border-strong);
-    background: var(--chrome-bg-strong);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    padding: 1rem 1rem;
+    padding: 1.5rem 1rem 2rem;
+    color: var(--fg-muted);
+  }
+
+  .site-footer a {
+    color: var(--fg-muted);
+  }
+
+  .site-footer a:hover {
+    color: var(--accent);
   }
 
   /* ---- Navigation ---- */
@@ -792,14 +780,7 @@
   }
 
   .music-row {
-    background: var(--chrome-bg);
-    border: 1px solid var(--chrome-border);
-    border-left: 3px solid var(--fg-muted);
-    border-radius: 0.7rem;
-    padding: 1rem 1.1rem;
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    backdrop-filter: blur(16px) saturate(180%);
-    box-shadow: var(--shadow-1);
+    border-left: 3px solid var(--accent-2);
   }
 
   .music-row h3 {
@@ -820,13 +801,12 @@
     flex-direction: column;
     align-items: center;
     gap: 1.5rem;
+    width: 100%;
+    max-width: 24rem;
+  }
+
+  .clock-wrap.page-panel {
     padding: 2.5rem 1.5rem;
-    background: var(--chrome-bg);
-    border: 1px solid var(--chrome-border);
-    border-radius: 1.1rem;
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    backdrop-filter: blur(24px) saturate(180%);
-    box-shadow: var(--shadow-3), inset 0 1px 0 var(--glass-inner);
   }
 
   .clock-ring {
@@ -869,5 +849,57 @@
     color: var(--accent);
     border-color: var(--accent);
     box-shadow: var(--glow-mint);
+  }
+
+  .clock-custom {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem 1.25rem;
+    width: 100%;
+  }
+
+  .clock-custom-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--fg-muted);
+    cursor: text;
+  }
+
+  .clock-custom-label {
+    font-family: var(--font-mono);
+    min-width: 2rem;
+  }
+
+  .clock-custom-input {
+    width: 3.25rem;
+    padding: 0.3rem 0.4rem;
+    border-radius: 0.45rem;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    color: var(--fg);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .clock-custom-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: var(--glow-mint);
+  }
+
+  .clock-custom-input:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .clock-custom-unit {
+    font-family: var(--font-mono);
+    color: var(--fg-dim);
   }
 }

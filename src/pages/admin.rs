@@ -79,11 +79,10 @@ fn AdminDashboard(admin: AdminPublic) -> impl IntoView {
                 {format!("已登录：{email}")}
             </p>
             <p class="text-sm text-[color:var(--fg-dim)]">
-                "顶栏在登录后会显示「后台 / 文章」入口，浏览前台时也可随时返回。"
+                "内容发布走 articles/ + git；顶栏登录后可随时回到后台。"
             </p>
             <div class="flex flex-wrap gap-3">
-                <A href="/admin/posts" attr:class="control-btn">"文章管理"</A>
-                <A href="/blog" attr:class="control-btn">"查看博客"</A>
+                <A href="/articles" attr:class="control-btn">"查看文章"</A>
                 <button
                     type="button"
                     class="control-btn"

@@ -2,37 +2,40 @@ use leptos::prelude::*;
 use leptos_router::components::A;
 use leptos_router::hooks::use_params_map;
 
-use crate::server::{ArticleMeta, get_site_article, list_site_articles};
+use crate::server::{ArticleMeta, CollectionPlaceholder, get_site_article, list_site_articles};
 
-/// `/articles` — 个人网站首发文章索引（由 articles/*.md 生成）。
+/// `/articles` — 倒序 flat 列表；合集由子目录 `_meta.json` 决定，徽章展示。
 #[component]
 pub fn ArticlesIndexPage() -> impl IntoView {
-    let articles = Resource::new(|| (), |_| async move { list_site_articles().await });
+    let list = Resource::new(|| (), |_| async move { list_site_articles().await });
 
     view! {
-        // /articles 列表页：去掉 page-panel 框，宽度 max-w-4xl 与首页一致；
-        // list-card 自带 frosted glass。
         <section class="mx-auto my-8 max-w-4xl space-y-5 px-4">
-            // /articles 列表页：去掉 "文章" h1 + 描述，list 卡片直接呈现。
-            // 列表语义已在 list-card 内部（每项的标题/日期/摘要/阅读全文），
-            // 章节级标题是噪音。
             <Suspense fallback=move || {
                 view! { <p class="text-[color:var(--fg-dim)]">"加载文章列表…"</p> }
             }>
-                {move || match articles.get() {
+                {move || match list.get() {
                     None => view! { <p class="text-[color:var(--fg-dim)]">"加载文章列表…"</p> }
                         .into_any(),
                     Some(Err(err)) => view! {
                         <p class="text-[color:var(--danger)]">{format!("加载失败：{err}")}</p>
                     }
                     .into_any(),
-                    Some(Ok(items)) if items.is_empty() => view! {
-                        <p class="text-[color:var(--fg-dim)]">"暂无文章。"</p>
+                    Some(Ok(view)) if view.articles.is_empty() && view.placeholders.is_empty() => {
+                        view! { <p class="text-[color:var(--fg-dim)]">"暂无文章。"</p> }.into_any()
                     }
-                    .into_any(),
-                    Some(Ok(items)) => view! {
+                    Some(Ok(view)) => view! {
                         <ul class="space-y-5">
-                            {items.into_iter().map(|a| view! { <ArticleItem article=a /> }).collect_view()}
+                            {view
+                                .placeholders
+                                .into_iter()
+                                .map(|p| view! { <CollectionPlaceholderRow item=p /> })
+                                .collect_view()}
+                            {view
+                                .articles
+                                .into_iter()
+                                .map(|a| view! { <ArticleItem article=a /> })
+                                .collect_view()}
                         </ul>
                     }
                     .into_any(),
@@ -43,22 +46,49 @@ pub fn ArticlesIndexPage() -> impl IntoView {
 }
 
 #[component]
+fn CollectionPlaceholderRow(item: CollectionPlaceholder) -> impl IntoView {
+    let note = item.note.clone().unwrap_or_else(|| "敬请期待".to_string());
+    let title = item.title.clone();
+    view! {
+        <li class="list-card opacity-80">
+            <div class="flex flex-wrap items-baseline justify-between gap-3">
+                <h2 class="text-base font-semibold text-[color:var(--fg-muted)]">{title}</h2>
+                <span class="tag">"即将同步"</span>
+            </div>
+            <p class="mt-1 text-sm text-[color:var(--fg-dim)]">{note}</p>
+        </li>
+    }
+}
+
+#[component]
 fn ArticleItem(article: ArticleMeta) -> impl IntoView {
     let href = format!("/articles/{}", article.slug);
     let date = article.date.clone().unwrap_or_default();
     let has_date = !date.is_empty();
     let has_summary = !article.summary.is_empty();
+    let badge = article
+        .collection_title
+        .clone()
+        .unwrap_or_else(|| "随笔".to_string());
+    let badge_class = if article.collection_title.is_some() {
+        "tag sky"
+    } else {
+        "tag"
+    };
 
     view! {
         <li class="list-card">
-            <h2 class="text-base font-semibold">
-                <A
-                    href=href.clone()
-                    attr:class="no-underline text-[color:var(--fg)] hover:text-[color:var(--fg-muted)]"
-                >
-                    {article.title.clone()}
-                </A>
-            </h2>
+            <div class="flex flex-wrap items-baseline justify-between gap-3">
+                <h2 class="text-base font-semibold">
+                    <A
+                        href=href.clone()
+                        attr:class="no-underline text-[color:var(--fg)] hover:text-[color:var(--fg-muted)]"
+                    >
+                        {article.title.clone()}
+                    </A>
+                </h2>
+                <span class=badge_class>{badge.clone()}</span>
+            </div>
             <Show when=move || has_date fallback=|| ()>
                 <p class="mt-1 text-sm text-[color:var(--fg-dim)] font-mono">{date.clone()}</p>
             </Show>
@@ -69,7 +99,6 @@ fn ArticleItem(article: ArticleMeta) -> impl IntoView {
     }
 }
 
-/// `/articles/:slug` — 文章详情（Markdown 在服务端渲染）。
 #[component]
 pub fn ArticlePage() -> impl IntoView {
     let params = use_params_map();
@@ -113,19 +142,28 @@ pub fn ArticlePage() -> impl IntoView {
                 Some(Ok(Some(detail))) => {
                     let title = detail.meta.title.clone();
                     let meta = detail.meta.date.clone().unwrap_or_else(|| "未标注日期".into());
+                    let badge = detail
+                        .meta
+                        .collection_title
+                        .clone()
+                        .unwrap_or_else(|| "随笔".to_string());
+                    let badge_class = if detail.meta.collection_title.is_some() {
+                        "tag sky"
+                    } else {
+                        "tag"
+                    };
                     let body_html = detail.body_html.clone();
                     view! {
-                        // 详情页用 page-panel 套上 0.30 玻璃面，markdown 内容
-                        // 落在稳定的"纸面"上而不是直接压到背景渐变。
                         <article class="page-panel mx-auto my-8 max-w-4xl px-4">
                             <p class="mb-4">
                                 <A href="/articles" attr:class="link-text text-sm">
                                     "← 文章"
                                 </A>
                             </p>
-                            // 详情页保留 h1（这是文章标题本身，不是 page chrome）、
-                            // 发布日期。markdown-body 在 translucent bg 上展示。
-                            <h1 class="page-title mb-4">{title}</h1>
+                            <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+                                <h1 class="page-title">{title}</h1>
+                                <span class=badge_class>{badge.clone()}</span>
+                            </div>
                             <p class="mb-8 text-sm dim-text font-mono">{format!("发布于 {meta}")}</p>
                             <div class="markdown-body" inner_html=body_html></div>
                         </article>
