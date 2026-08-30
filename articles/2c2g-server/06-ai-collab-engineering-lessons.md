@@ -260,22 +260,26 @@ fn apply_theme_to_dom(t: ThemeMode) {
 ```rust
 // ❌ 失败
 let class = format!("section-card {}", item.cls);
-view! { <A href=item.href attr:class=class>...</A> }
+view! { <A href=item.href class=class>...</A> }
 ```
 
-Tailwind 的 content scan 只看 `class="..."` 字面量。`format!()` 拼出来的 `section-card` 看不到，postcss 直接 tree-shake 掉 `.section-card` 规则。运行时组件用的是 v0.3.4 老的实色背景（`--surface`），看起来"透明效果没生效"。
+Tailwind 的 content scan 把源文件当纯文本，看不到 `format!()` 拼出来的 token。v3 时代用 `tailwind.config.js` safelist 兜底；**v4 已迁移**（ADR-014）：配置在 `style/tailwind.css`（`@import "tailwindcss"` + `@source`），动态组合改为静态 `match`：
 
-```js
-// 修复：tailwind.config.js 加 safelist
-safelist: [
-  "section-card", "section-card.s-mint", "section-card.s-sky", "section-card.s-mix",
-  "lab-card",
-  "radar-row", "radar-row.s-mint", "radar-row.s-sky",
-],
+```rust
+fn section_card_class(cls: &str) -> &'static str {
+    match cls {
+        "s-sky" => "section-card s-sky",
+        "s-mint" => "section-card s-mint",
+        "s-mix" => "section-card s-mix",
+        _ => "section-card",
+    }
+}
 ```
+
+响应式 utility（如 `sm:flex`）写在 `style/tailwind.safelist.html`，由 `@source` 纳入 release 构建。
 
 > **💡 提示**
-> 任何 `class={format!("xxx {}", yyy)}` 的写法，class 名都要进 `safelist`。或者把 format 拆成字面量条件：`if yyy { "section-card mint" } else { "section-card sky" }`。
+> 优先 `class="完整 utility 字符串"`；禁止 `format!()` 拼 Tailwind class。组件层样式（`.section-card` 在 `@layer components`）始终保留；被 purge 的通常是 **utility**（`gap-4`、`max-w-4xl` 等）。
 
 ### 坑 2：leptos `on:click` 失效的兜底——以及"是不是 leptos 坏"
 
@@ -330,12 +334,12 @@ view! {
 ## 参考资料
 
 1. 本仓库 `AGENT.md`、`rules/deploy-gating.md`、`rules/local-verification.md`
-2. 本仓库 `style/tokens.css`、`style/tailwind.css`、`tailwind.config.js`
+2. 本仓库 `style/tokens.css`、`style/tailwind.css`、`style/tailwind.safelist.html`（Tailwind v4，见 ADR-014）
 3. Anthropic Claude / Claude Code 官方：https://claude.com/claude-code
 4. Leptos 0.8 文档：https://leptos.dev
 5. Tailwind CSS tree-shaking 文档：https://tailwindcss.com/docs/content-configuration#class-detection-in-depth
 
-**版本信息**: 本文基于 Leptos 0.8 / Rust 1.97 / Tailwind CSS 3，写于 2026-08。
+**版本信息**: 本文基于 Leptos 0.8 / Rust 1.97 / Tailwind CSS 4，写于 2026-08；v4 迁移见 `docs/adr/014-tailwind-v4.md`。
 
 ---
 

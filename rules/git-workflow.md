@@ -70,7 +70,7 @@
 
 - [`rules/local-verification.md`](local-verification.md) — 改完必须本地起服务、让你检视
 - [`rules/leptos-ssr-hydrate.md`](leptos-ssr-hydrate.md) — `#[cfg(feature = "hydrate")]` 不能写在 view! 闭包 body 里
-- `tailwind.config.js` `safelist` — `format!()` 拼出来的 class 必须列出，否则被 tree-shake
+- Tailwind v4 — `<A>` 用 `attr:class=`；其它元素用 `class=`；动态组合用静态 `match`；utility 兜底见 `style/tailwind.safelist.html`（ADR-014）
 
 ## 开源仓库注意事项
 

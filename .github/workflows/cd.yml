@@ -24,8 +24,9 @@ env:
   # Pin build tools — install-action pulls prebuilt GitHub Release assets (seconds, not minutes).
   CARGO_LEPTOS_VERSION: '0.3.7'
   CARGO_ZIGBUILD_VERSION: '0.23.3'
-  # Match local dev: tailwind.config.js content/safelist requires Tailwind v3 (not v4 CLI).
-  TAILWIND_VERSION: '3.4.0'
+  # Tailwind v4 — CSS-native config in style/tailwind.css (@import / @source).
+  LEPTOS_TAILWIND_VERSION: 'v4.3.3'
+  TAILWIND_VERSION: 'v4.3.3'
 
 jobs:
   deploy-production:
@@ -91,16 +92,13 @@ jobs:
           path: ~/.cache/cargo-leptos
           key: cargo-leptos-tools-${{ runner.os }}-tw${{ env.TAILWIND_VERSION }}
 
-      # cargo-leptos prefers `which tailwindcss` over its bundled v4 downloader.
-      # v4 ignores our JS config content scan → utilities purged (see v0.3.9 CSS gate).
-      - name: Install Tailwind CSS CLI v3 (match local)
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install global tailwindcss@${{ env.TAILWIND_VERSION }}
+      # cargo-leptos prefers `which tailwindcss`; preinstall v4 standalone on PATH.
+      - name: Install Tailwind CSS CLI v4 (pinned)
         run: |
-          npm install -g "tailwindcss@${TAILWIND_VERSION}"
+          curl -fsSLo /tmp/tailwindcss \
+            "https://github.com/tailwindlabs/tailwindcss/releases/download/${TAILWIND_VERSION}/tailwindcss-linux-x64"
+          chmod +x /tmp/tailwindcss
+          sudo mv /tmp/tailwindcss /usr/local/bin/tailwindcss
           tailwindcss --help | head -1
 
       - name: Build site (WASM + CSS)

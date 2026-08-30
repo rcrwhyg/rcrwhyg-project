@@ -43,10 +43,10 @@ pub fn RadarPage() -> impl IntoView {
 
 #[component]
 fn RadarRow(entry: RadarEntry) -> impl IntoView {
-    let accent_class = if entry.accent.eq_ignore_ascii_case("sky") {
-        "s-sky"
+    let row_class = if entry.accent.eq_ignore_ascii_case("sky") {
+        "radar-row s-sky"
     } else {
-        "s-mint"
+        "radar-row s-mint"
     };
     let has_link = entry.link.is_some();
     let link = entry.link.clone().unwrap_or_default();
@@ -54,7 +54,7 @@ fn RadarRow(entry: RadarEntry) -> impl IntoView {
     let has_note = !note.is_empty();
 
     view! {
-        <div class=format!("radar-row {accent_class}")>
+        <div class=row_class>
             <div>
                 <div class="name">{entry.ecosystem}</div>
                 <Show when=move || has_note fallback=|| ()>

@@ -1,6 +1,6 @@
 # Architecture — 如春日午后阳光
 
-Personal site: **Leptos 0.8 SSR-first**, **Axum**, **cargo-leptos**, **Tailwind**, optional **Postgres/SQLx** (auth only). Production server binary is a **static musl** artifact via **cargo-zigbuild**.
+Personal site: **Leptos 0.8 SSR-first**, **Axum**, **cargo-leptos**, **Tailwind CSS v4**, optional **Postgres/SQLx** (auth only). Production server binary is a **static musl** artifact via **cargo-zigbuild**.
 
 ## Product shape
 
@@ -44,7 +44,8 @@ src/
   main.rs
 style/
   tokens.css     # mint/sky dark tokens (+ light palette reserved for palette-preview)
-  tailwind.css
+  tailwind.css   # @import tailwindcss + @source + @layer chrome (ADR-014)
+  tailwind.safelist.html  # responsive / arbitrary utility safelist for release builds
 articles/        # canonical Markdown (合集子目录 + NN-slug.md)
 data/            # radar.json, music.json, lab.json
 content/         # about.md

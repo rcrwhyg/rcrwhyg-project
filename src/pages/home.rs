@@ -87,9 +87,8 @@ fn SectionCarousel() -> impl IntoView {
                     {ITEMS
                         .iter()
                         .map(|item| {
-                            let class = format!("section-card {}", item.cls);
                             view! {
-                                <A href=item.href attr:class=class>
+                                <A href=item.href attr:class=section_card_class(item.cls)>
                                     <span class="eyebrow">{item.eyebrow}</span>
                                     <h3>{item.name}</h3>
                                     <p>{item.blurb}</p>
@@ -101,11 +100,10 @@ fn SectionCarousel() -> impl IntoView {
                     {ITEMS
                         .iter()
                         .map(|item| {
-                            let class = format!("section-card {}", item.cls);
                             view! {
                                 <A
                                     href=item.href
-                                    attr:class=class
+                                    attr:class=section_card_class(item.cls)
                                     attr:aria-hidden="true"
                                     attr:tabindex="-1"
                                 >
@@ -129,6 +127,15 @@ struct SectionItem {
     eyebrow: &'static str,
     name: &'static str,
     blurb: &'static str,
+}
+
+fn section_card_class(cls: &str) -> &'static str {
+    match cls {
+        "s-sky" => "section-card s-sky",
+        "s-mint" => "section-card s-mint",
+        "s-mix" => "section-card s-mix",
+        _ => "section-card",
+    }
 }
 
 #[component]

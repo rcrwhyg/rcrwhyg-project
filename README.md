@@ -3,7 +3,9 @@
 [![CI](https://github.com/rcrwhyg/rcrwhyg-project/actions/workflows/ci.yml/badge.svg)](https://github.com/rcrwhyg/rcrwhyg-project/actions/workflows/ci.yml)
 [![CD](https://github.com/rcrwhyg/rcrwhyg-project/actions/workflows/cd.yml/badge.svg)](https://github.com/rcrwhyg/rcrwhyg-project/actions/workflows/cd.yml)
 
-Personal site: Leptos 0.8 SSR-first + Axum (HTTP / planned WS+SSE) + Tailwind. Calm-tech UI (fixed **dark** theme) with a dynamic mouse-follow backdrop. Content in `articles/` (git + CD). Production server: **static musl** via **cargo-zigbuild**.
+Personal site: Leptos 0.8 SSR-first + Axum (HTTP / planned WS+SSE) + **Tailwind CSS v4**. Calm-tech UI (fixed **dark** theme) with a dynamic mouse-follow backdrop. Content in `articles/` (git + CD). Production server: **static musl** via **cargo-zigbuild**.
+
+**Dev:** `cargo leptos` invokes `tailwindcss` on PATH — use **v4.3.x** standalone ([releases](https://github.com/tailwindlabs/tailwindcss/releases)) or let cargo-leptos download it. A global **v3** CLI will break `@import "tailwindcss"`.
 
 ## Docs
 

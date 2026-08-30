@@ -1,8 +1,9 @@
+@import "tailwindcss";
 @import "./tokens.css";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* v4: scan Leptos sources + explicit utility safelist (responsive / arbitrary). */
+@source "../src/**/*.rs";
+@source "./tailwind.safelist.html";
 
 @layer base {
   html {
