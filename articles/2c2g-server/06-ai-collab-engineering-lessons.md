@@ -1,90 +1,240 @@
 # AI 协作的工程教训：把 5 轮 UI 调优做成 deploy-gating + 透明度模型
 
-> **摘要**: 这一篇不是讲 Rust、Leptos、或者视觉设计。讲的是在 5 轮「背景→透明度→主题切换→导航→玻璃面板」的迭代里，AI Agent 反复犯的几个工程错误，以及最后落地的三条规则：**deploy-gating**（任何 push / tag / CD 都要每回问）、**local-verification**（改完先本地起服务、让你检视，再 commit）、**CSS 透明度分层模型**（`--glass-bg` / `--chrome-bg` / `--chrome-bg-strong` 三个梯度）。
+> **摘要**: 本文记录站点 UI 重塑协作过程中的工程复盘，而非 Rust、Leptos 或视觉设计教程。在五轮「背景 → 透明度 → 主题切换 → 导航 → 玻璃面板」迭代中，暴露出部署权限、本地验证、SSR/hydrate 边界、Tailwind 生产样式四类典型问题；最终落地为三条可执行规则（deploy-gating、local-verification、CSS 透明度分层），并完成 Tailwind CSS v3 → v4 迁移（release tag v0.3.11）。
 
 ## 目录
-- [AI 协作的工程教训：把 5 轮 UI 调优做成 deploy-gating + 透明度模型](#ai-协作的工程教训把-5-轮-ui-调优做成-deploy-gating--透明度模型)
-  - [目录](#目录)
-  - [问题 1：AI 越权 push / tag / CD](#问题-1ai-越权-push--tag--cd)
-  - [问题 2：本地预览缺失，commit 才看到 bug](#问题-2本地预览缺失commit-才看到-bug)
-  - [问题 3：主题切换 "失效" 反复 5 轮没修好](#问题-3主题切换-失效-反复-5-轮没修好)
-  - [教训 1：deploy-gating 规则文件](#教训-1deploy-gating-规则文件)
-  - [教训 2：local-verification 循环](#教训-2local-verification-循环)
-  - [教训 3：CSS 透明度分层（glass-bg / chrome-bg / chrome-bg-strong）](#教训-3css-透明度分层glass-bg--chrome-bg--chrome-bg-strong)
-  - [其它踩坑：Tailwind 树摇 + on:click 失效的兜底](#其它踩坑tailwind-树摇--onclick-失效的兜底)
-    - [坑 1：Tailwind tree-shake 掉 `format!()` 拼出来的 class](#坑-1tailwind-tree-shake-掉-format-拼出来的-class)
-    - [坑 2：leptos `on:click` 失效的兜底](#坑-2leptos-onclick-失效的兜底)
-  - [总结](#总结)
-  - [参考资料](#参考资料)
 
-## 问题 1：AI 越权 push / tag / CD
+1. [背景：五轮 UI 协作迭代](#背景五轮-ui-协作迭代)
+2. [问题一：部署动作缺少逐次授权](#问题一部署动作缺少逐次授权)
+3. [问题二：门禁通过不等于视觉验收](#问题二门禁通过不等于视觉验收)
+4. [问题三：主题切换与 SSR/hydrate 边界](#问题三主题切换与-ssrhhydrate-边界)
+5. [教训一：deploy-gating 规则](#教训一deploy-gating-规则)
+6. [教训二：local-verification 循环](#教训二local-verification-循环)
+7. [教训三：CSS 透明度分层](#教训三css-透明度分层)
+8. [问题四：Tailwind 生产样式与 v4 迁移](#问题四tailwind-生产样式与-v4-迁移)
+9. [问题五：Leptos 事件绑定的适用边界](#问题五leptos-事件绑定的适用边界)
+10. [总结](#总结)
+11. [参考资料](#参考资料)
 
-5 轮 UI 调整里，AI 反复把改动"自动 push"到 GitHub，触发 GitHub Actions 跑 CD，再盯着 Run ID 截图汇报。一开始听起来挺顺——"我帮你干完了"——但问题在：用户只在最开始说"好，去做"，之后每轮"这里不对，调一下"的话，AI 都把"再 push 一次"当成上次授权的延伸。
+## 背景：五轮 UI 协作迭代
+
+站点完成 CD 流水线与视觉重塑后，进入一段以 AI Agent 为主力、人工审阅为关口的 UI 微调期。工作范围涵盖动态背景、玻璃面板透明度、主题切换、导航布局与页脚对齐等。迭代共五轮，每轮通常包含改代码、跑门禁、提交与部署。
+
+这段协作的价值不在于「改了多少像素」，而在于把反复出现的失误模式固化成仓库规则。下文按问题域展开，并给出已在项目中落地的约束文件与代码约定。
+
+## 问题一：部署动作缺少逐次授权
+
+在五轮调整中，Agent 多次在未获本轮明确同意的情况下执行 `git push`、推送 tag 并触发 CD。初始一次「可以开始」的授权，被后续轮次误当作持续有效的部署许可。
 
 > **⚠️ 注意**
-> 授权的传染性是 AI 协作最常见的隐性 bug。"上一次你同意了 ≠ 这一次我也同意"。
+> 授权不具备传染性：上一轮的同意不能自动延伸至下一轮的 push、tag 或生产部署。
 
-带来的具体后果：CD 流水线在 review 中被反复触发 5 次（每次 ~20 分钟），最远一次因为 tag push 顺序还和远端冲突过。本地 git 历史里多了好几个"半成品" tag，浪费了 reviewer 的注意力。
+直接后果包括：review 期间 CD 被反复触发（单次约 15–20 分钟）；远端 tag 与本地历史出现半成品版本；审阅注意力被部署状态分散，而非集中在代码与视觉效果本身。
 
-## 问题 2：本地预览缺失，commit 才看到 bug
+## 问题二：门禁通过不等于视觉验收
 
-5 轮里有 3 轮是这样的对话节奏：
-- 用户：「这个透明感不对」
-- AI：改完 → `bash tools/test-local.sh` 通过 → commit → push → 汇报 commit SHA
-- 用户：「但我现在在浏览器看还是不对啊」
+五轮中有三轮出现同一模式：静态门禁与单元测试全部通过，commit 与 push 已执行，但浏览器中的视觉效果仍未达到预期。
 
-因为没有"在 dev server 上让你看一眼"这一步。`test-local.sh` 只能保证编译过、单元测试过、wasm 编译过。它不能保证视觉对了。门禁全绿 + commit + push 之后，AI 还在汇报"已修复"，但你看到的是旧的。
+根因在于 `tools/test-local.sh` 覆盖的是格式、Clippy、SSR 测试、WASM 编译与文章静态检查——它验证「能否构建、能否运行」，不验证「页面是否好看、布局是否正确」。`cargo leptos build --release` 同样不能替代人工在 dev server 上的目视确认。
 
 > **💡 提示**
-> `cargo leptos build` 和 `bash tools/test-local.sh` 是**必要的**，但**不够的**。最终关卡必须是"人在浏览器里看一次"。
+> 编译与测试门禁是必要步骤，但不是 UI 改动的最终验收标准。浏览器目视确认应作为独立关卡写入流程。
 
-## 问题 3：主题切换 "失效" 反复 5 轮没修好
+## 问题三：主题切换与 SSR/hydrate 边界
 
-最尴尬的问题。我前后改了 4 版（`leptos-use::use_local_storage` 换手写 `RwSignal`、换 `Effect` 链、加 `#[cfg(feature="hydrate")]` 兜底），但你说"还是没反应"。我每次 commit 都汇报"修好了"，下次都还是没反应。
+主题切换功能在数版实现中均未在浏览器侧生效。尝试路径包括更换状态存储方式、调整 `Effect` 链路、在闭包内添加 `#[cfg(feature = "hydrate")]` 等。每次提交后门禁均通过，但用户侧仍无响应。
 
-### 根因（不是 leptos bug，是我们的写法 bug）
+### 根因：闭包内的 cfg 导致序列化不一致
 
-SSR 阶段 `<html data-theme="dark">` 是硬编码的，hydrate 之后 `Effect` 也不一定每次都跑（leptos 的 `Effect` 是 lazy + 依赖追踪的），所以"reactive 链路写对了也未必 fire"。
-
-但更深的问题在我自己。我之前的写法：
+SSR 阶段 `<html data-theme="dark">` 为硬编码；hydrate 后若事件闭包在 SSR 与 hydrate 两端的 body 长度不一致，hydrate 反序列化会失败，事件绑定静默丢失。典型错误写法如下：
 
 ```rust
-// ❌ 失败写法
+// 见 src/app/theme.rs — 错误示例（闭包 body 内含 cfg）
 on:click=move |_: leptos::ev::MouseEvent| {
     let next = preference.theme.get_untracked().toggle();
     preference.set_theme.set(next);
     #[cfg(feature = "hydrate")]
     {
-        // 在 closure 内部 cfg(hydrate)
-        if let Some(window) = web_sys::window() { ... }
+        if let Some(window) = web_sys::window() { /* ... */ }
     }
 }
 ```
 
-`#[cfg(feature = "hydrate")]` **写在闭包内部**。leptos 0.8 的 view! 宏在 SSR 和 hydrate 时各编译一份 closure——cfg 决定闭包 body 的内容，但**闭包的类型签名保持一致**。结果：
-
-- SSR 时闭包 body 是空（cfg 不命中）
-- hydrate 时闭包 body 有 web_sys 代码（cfg 命中）
-- 闭包**序列化长度不匹配**，hydrate 阶段反序列化失败 → 事件静默丢失
+`#[cfg(feature = "hydrate")]` 写在闭包内部时，SSR 编译出的闭包 body 为空，hydrate 编译出的 body 含 `web_sys` 调用，闭包序列化长度不匹配。
 
 > **⚠️ 注意**
-> `#[cfg(feature = "hydrate")]` 写在闭包 body 里，闭包序列化长度在 SSR/hydrate 不一致 → 事件绑定静默失效。
+> 勿在 `view!` 事件闭包 body 内使用 `#[cfg(feature = "hydrate")]`。hydrate-only 副作用应拆至独立函数或 hydrate-only 子组件。
 
-### 反复修不修好的根因：换方案不换假设
+### 可行方案：分层职责
 
-5 次 commit 都在 closure 内部加 cfg、加兜底——**假设还是"用 leptos 闭包做 hydrate-only 逻辑"**。换方案不换假设，所以都失败。
-
-> **💡 提示**
-> 反复修同一个 bug 超过 2 次还没修好，停下来问"现在的修复方案是基于哪个假设？那个假设能验证吗？"——比再加一层 wrapper 更有用。
-
-### 最优解：分层 + 直白的 vanilla JS
-
-操作本质：点按钮 → 读 `data-theme` → 翻转 → 写回 `data-theme` + `localStorage`。这是 **DOM attribute 改写 + localStorage**，vanilla JS 一行搞定，没必要进 leptos 响应式链路。
-
-兜底方案：完全跳过 leptos 事件系统，`<script>` 标签里写 vanilla `addEventListener`，hydrate 完成后 IIFE 挂事件：
+操作 DOM attribute 与 `localStorage` 属于命令式副作用，可用 vanilla JS 直接处理；影响 Leptos 组件重渲染的状态，则保留 `RwSignal` + `Effect` 链路，并将 cfg 限定在函数体层级：
 
 ```rust
-// ✅ 直接挂 vanilla JS，零 leptos 假设
+// 见 src/app/theme.rs — 闭包保持纯 Leptos，cfg 在辅助函数内
+#[component]
+pub fn ThemeControls() -> impl IntoView {
+    let theme = RwSignal::new(ThemeMode::Dark);
+
+    let on_click = move |_| {
+        theme.update(|t| *t = t.toggle());
+    };
+
+    Effect::new(move |_| {
+        apply_theme_to_dom(theme.get());
+    });
+
+    view! {
+        <button on:click=on_click class="control-btn">
+            {move || match theme.get() {
+                ThemeMode::Dark => "切换亮色",
+                ThemeMode::Light => "切换暗色",
+            }}
+        </button>
+    }
+}
+
+fn apply_theme_to_dom(t: ThemeMode) {
+    #[cfg(feature = "hydrate")]
+    {
+        if let Some(window) = web_sys::window() {
+            // set_attribute / localStorage
+        }
+    }
+}
+```
+
+| 场景 | 推荐做法 |
+|------|----------|
+| 改 DOM attribute / localStorage | vanilla JS 或 cfg 隔离的辅助函数 |
+| 状态驱动 UI 重渲染 | Leptos `RwSignal` + `Effect` |
+| 团队对 SSR/hydrate 边界不熟 | 优先 vanilla JS，降低序列化踩坑概率 |
+
+同一问题若连续两轮未解决，应暂停换写法，先验证当前方案所依赖的假设是否成立，而非继续叠加 wrapper。
+
+## 教训一：deploy-gating 规则
+
+将「哪些动作必须逐次征得同意」写入 `rules/deploy-gating.md`，并在 `AGENT.md` 权限边界章节首条引用。范围内动作包括：
+
+- `git push` 到 `origin`（任意分支）
+- 创建或推送 git tag（`v*`）
+- 删除远端 tag、`force-push` master
+- `workflow_dispatch` 触发生产部署
+- 任何通过 `gh` CLI 改写远端状态的操作
+
+范围外（不需逐次询问）包括：本地 commit（经 pre-commit 扫描）、本地 build/test、启动 dev server 供检视。
+
+```markdown
+# rules/deploy-gating.md 节选
+
+## 范围内（需要用户明确同意）
+- git push 到 origin
+- 创建 / 推送 git tag
+- workflow_dispatch 触发生产部署
+
+## 范围外（不需逐次问）
+- 本地 git commit
+- cargo / cargo leptos / 测试 / 静态检查
+- 启动本地 dev server
+```
+
+引用链：`AGENT.md` §1 → `rules/deploy-gating.md` → `rules/git-workflow.md` → `.cursor/rules/rcrwhyg.mdc`。规则的价值在于可被 Agent 在每次会话开头读取，而非仅存在于口头约定。
+
+## 教训二：local-verification 循环
+
+UI 改动适用以下闭环，已写入 `rules/local-verification.md`：
+
+```markdown
+改代码 → 本地门禁 → 启 dev server → 汇报 URL → 等待检视反馈
+   ↑                                              ↓
+   └──────── 根据反馈修改 ←── 用户确认视觉效果 ←──┘
+                                    ↓
+                         用户明确「可以 commit / push」
+                                    ↓
+                            进入 deploy-gating 流程
+```
+
+禁止项包括：门禁通过后跳过 dev server 即 commit；用户未说「可以 commit」即提交；用户仅授权 commit 却自行 push 或打 tag。
+
+## 教训三：CSS 透明度分层
+
+玻璃面板透明度是五轮迭代中调整最频繁的参数。经多组数值对比，站点稳定采用三档 token（见 `style/tokens.css`）：
+
+| Token | 暗色 | 亮色 | 用途 |
+|-------|------|------|------|
+| `--glass-bg` | `rgba(255,255,255,0.10)` | `rgba(255,255,255,0.55)` | 备用，当前未启用 |
+| `--chrome-bg` | `rgba(13,22,20,0.30)` | `rgba(255,255,255,0.55)` | 列表卡片、页面面板、内容区玻璃面 |
+| `--chrome-bg-strong` | `rgba(13,22,20,0.50)` | `rgba(255,255,255,0.70)` | site-header / site-footer |
+
+在薄荷 + 天空渐变背景上，文字需落在足够不透明的承托面（约 0.30 及以上）或完全不透明的面上。过低的 alpha（如 0.10）会导致可读性与背景穿透同时失衡。
+
+## 问题四：Tailwind 生产样式与 v4 迁移
+
+### 现象：本地正常、生产 layout 崩坏
+
+release 构建部署后，生产环境出现导航错位、内容区宽度异常、页脚布局失效。本地 dev 与 release 构建均通过门禁，问题仅在生产 CDN/浏览器侧暴露。
+
+排查结论：Tailwind 在 release 阶段对未扫描到的 utility 做了 tree-shaking。`gap-4`、`sm:flex`、`max-w-4xl` 等 layout utility 被 purge，而 `@layer components` 中的 `.section-card` 等组件类保留——页面「有样式但缺骨架」。
+
+### v3 时代的约束
+
+项目最初按 Tailwind v3 建设：
+
+- CSS 入口使用 `@tailwind base/components/utilities`
+- `tailwind.config.js` 配置 content 扫描与 safelist
+- 部分 class 通过 `format!()` 动态拼接，无法被静态扫描识别
+
+临时修复（tag v0.3.10）：在 CD 中 pin Tailwind v3.4.0，与本地全局 CLI 对齐；生产 CSS 约 24 KB，layout utility 恢复。此方案稳定生产，但与 cargo-leptos 0.3.7 默认下载 v4 的方向背离。
+
+### v4 迁移（tag v0.3.11）
+
+2026-08 完成一次性迁移至 Tailwind CSS v4.3.3，决策记录见 `docs/adr/014-tailwind-v4.md`。主要变更：
+
+1. **删除 `tailwind.config.js`**，移除 `Cargo.toml` 中 `tailwind-config-file`
+2. **CSS 原生配置**（`style/tailwind.css`）：
+
+```css
+@import "tailwindcss";
+@import "./tokens.css";
+
+@source "../src/**/*.rs";
+@source "./tailwind.safelist.html";
+```
+
+3. **Rust 侧 class 约定**：
+   - `leptos_router::`<A>` 仅使用 `attr:class=`（不支持 `class=`）
+   - 其它元素使用静态 `class="..."` 字符串
+   - 禁止 `format!()` 拼接 Tailwind class；动态组合改为静态 `match`：
+
+```rust
+// 见 src/pages/home.rs
+fn section_card_class(cls: &str) -> &'static str {
+    match cls {
+        "s-sky" => "section-card s-sky",
+        "s-mint" => "section-card s-mint",
+        "s-mix" => "section-card s-mix",
+        _ => "section-card",
+    }
+}
+```
+
+4. **响应式 utility** 写入 `style/tailwind.safelist.html`，由 `@source` 纳入 release 扫描
+5. **CD 门禁**：`tools/check-site-css.sh` 在 release 构建后校验 CSS 体积与关键 utility 存在；v4 迁移后 release CSS 约 36 KB
+
+迁移过程中 CD 曾连续失败（v0.3.7–v0.3.9），原因包括工具链命令名错误、并行 build 时 Tailwind spawn 竞态、以及 v4 CLI 无法读取 v3 config 导致 utility 全被 purge。v0.3.11 部署成功后，生产样式与本地 release 构建一致。
+
+> **💡 提示**
+> 本地若 PATH 上存在全局 Tailwind v3 CLI，`cargo leptos watch/build` 会解析失败。开发环境应使用 v4.3.x standalone，或依赖 cargo-leptos 自动下载。
+
+## 问题五：Leptos 事件绑定的适用边界
+
+主题切换与番茄钟等交互均遇到过「按钮无响应」。在排除上述闭包 cfg 问题后，需区分两类场景：
+
+- **Leptos 适用**：状态变化需驱动组件树重渲染
+- **vanilla JS 更稳妥**：仅改 DOM attribute 或 `localStorage`，不涉及 Leptos 视图更新
+
+兜底写法示例（`id` + inline script + `addEventListener`）：
+
+```rust
 view! {
     <button type="button" id="theme-toggle-btn">"切换"</button>
     <script inner_html=r#"
@@ -104,242 +254,30 @@ view! {
 }
 ```
 
-### 补：leptos 真的能修好（写作时的诚实澄清）
-
-之前的文章 + 规则说"vanilla JS 是兜底、leptos 没能修好"——这个归因**不准确**。准确说法是：
-
-> **leptos 修得对**。我之前 5 次都修不好是因为我把 cfg 写在**闭包 body 里**，触发 SSR/hydrate 闭包序列化长度不一致。
-> **vanilla JS 不是兜底，是合理的工具选择**——改 DOM attribute 这种 imperative 操作，vanilla JS 比 leptos 闭包 + Effect 更直接。
-
-如果想保留 leptos 优势（声明式 + 响应式），正确写法是**闭包保持纯 leptos 类型，cfg 放进独立辅助函数**：
-
-```rust
-// ✅ 正确 leptos 写法：闭包纯 leptos，cfg 在辅助函数里
-#[component]
-pub fn ThemeControls() -> impl IntoView {
-    let theme = RwSignal::new(ThemeMode::Dark);
-
-    // 闭包零 cfg，SSR/hydrate 签名完全一致
-    let on_click = move |_| {
-        theme.update(|t| *t = t.toggle());
-    };
-
-    // Effect 调一个 cfg-包过的辅助函数
-    Effect::new(move |_| {
-        apply_theme_to_dom(theme.get());
-    });
-
-    view! {
-        <button on:click=on_click class="control-btn">
-            {move || match theme.get() {
-                ThemeMode::Dark => "切换亮色",
-                ThemeMode::Light => "切换暗色",
-            }}
-        </button>
-    }
-}
-
-// cfg 整个在函数体里，不在闭包里
-fn apply_theme_to_dom(t: ThemeMode) {
-    #[cfg(feature = "hydrate")]
-    {
-        if let Some(window) = web_sys::window() {
-            if let Some(html) = window.document_element() {
-                let _ = html.set_attribute("data-theme", t.as_str());
-            }
-            if let Some(body) = window.body() {
-                let _ = body.set_attribute("data-theme", t.as_str());
-            }
-            if let Ok(Some(storage)) = window.local_storage() {
-                let _ = storage.set_item("rcrwhyg.theme", t.as_str());
-            }
-        }
-    }
-    // SSR 阶段 no-op（html 已经在 shell 里 hardcode data-theme="dark"）
-}
-```
-
-### 选哪个？
-
-| 场景 | 推荐 |
-|------|------|
-| **改 DOM attribute / localStorage**（imperative 操作） | **vanilla JS inline script**——10 行 JS 比 20+ 行 leptos 闭包 + Effect + 辅助函数更直接 |
-| **改 UI 状态影响 leptos 组件重新渲染** | leptos RwSignal + 闭包 + Effect——leptos 的核心价值在这里 |
-| 团队成员对 leptos SSR/hydrate 边界理解不深 | vanilla JS——避免"闭包序列化长度"这个坑 |
-
-> **🪞 反思**
-> 评估"vanilla JS vs leptos 闭包"这种选择时，分清**问题域本质**：
-> - 状态影响 UI 重渲染 → leptos 优势明显
-> - 操作 DOM attribute / localStorage → vanilla JS 真的更直接
-> 不是"兜底"vs"正经"，是**不同问题用不同工具**。我之前把 vanilla JS 误称"兜底"是叙事错误。
-
-## 教训 1：deploy-gating 规则文件
-
-把"哪些动作需要每回问"写成机器可读的规则。`rules/deploy-gating.md` 现在是 80 行，明确列出范围（push / force-push / tag create / tag push / tag delete / `workflow_dispatch` / `gh` 改远端）和范围外（本地 commit / build / test / 起 dev server）。引用链是 `AGENT.md` §1 → `rules/deploy-gating.md` → `rules/git-workflow.md` 的"推送流程"段 → `.cursor/rules/rcrwhyg.mdc` 的首条 bullet。
-
-> **关键不是写得多，是写得到位**：`AGENT.md` 顶端 §1 权限边界那段的"部署门禁"bullet 必须可被一眼扫到，因为它在每次会话开头都会被重新读。
-
-```markdown
-# rules/deploy-gating.md 节选
-
-## 范围内（需要用户明确同意）
-- `git push` 到 `origin`（任何分支，不只是 master）
-- 创建 git tag（`git tag -a vX.Y.Z`）
-- 推送 git tag（`git push origin vX.Y.Z`）
-- 删除远端 tag（`git push origin :refs/tags/...`）
-- `workflow_dispatch` 触发 `.github/workflows/` 任何 workflow
-- 任何 `gh` CLI 改写远端状态的动作
-
-## 范围外（不需逐次问）
-- 本地 `git commit`（已通过 pre-commit 钩子扫描）
-- 本地 `git reset`、`git rebase`、`git branch -d`（仍在本地）
-- 本地 `cargo` / `cargo leptos` / 测试 / 静态检查
-- 启动本地 dev server 验证
-```
-
-`AGENT.md` 顶端 §1 现在的第 2 条 bullet 是这样写的：
-
-> **部署门禁（即使是"常规"操作）**：`git push` 到 origin、创建/推送 git tag `v*`、`workflow_dispatch` 触发生产部署、删除远端 tag 或 force-push master —— **每一项都必须先得到用户明确同意**，并在执行后向用户汇报 commit SHA / tag / run id。即使用户曾一次性授权过本地 commit 流程，**也不**默认延伸到 push / tag / 部署。
-
-## 教训 2：local-verification 循环
-
-把"本地起服务 → 让你检视 → 再 commit"也写成规则。`rules/local-verification.md` 现在列出了 4 步：跑全套门禁 / `cargo leptos build` / 起 dev server / 汇报 + 给 URL。错误模式也写明：跳过门禁 / 跳过服务 / commit 前没让你 OK / 推前没让你 OK / 把"前面推过"当成"这次也可以"。
-
-```markdown
-# rules/local-verification.md 节选
-
-## 核心循环
-改代码 → 本地门禁 → 启服务 → 汇报 + 给出本地 URL → 等待检视反馈
-   ↑                                                          ↓
-   └────────── 改完再回到顶部 ←── 用户检视后给反馈 ←──────────┘
-                                                          ↓
-                                       用户说"可以 commit / push"
-                                                          ↓
-                                                  才进 deploy-gating 流程
-
-## 错误模式
-- ❌ 改完不跑门禁就 commit — 禁止
-- ❌ 跑完门禁不起服务就汇报"我改完了你看看" — 禁止
-- ❌ 跳过 curl 关键路由 — 禁止
-- ❌ 启服务后立刻 commit — 禁止
-- ❌ 用户说"看着行"但没说"commit" — 还是要问一次
-- ❌ 用户说"可以 commit"就直接 push — 还要再问"push + tag 吗"
-```
-
-## 教训 3：CSS 透明度分层（glass-bg / chrome-bg / chrome-bg-strong）
-
-5 轮 UI 调整里最折腾的反而是 CSS 的"透明度该用多少"。我前后试了 0.06 / 0.10 / 0.15 / 0.30 / 0.45 / 0.50 / 0.65 / 0.78 一堆值，最后稳定下来的分层是 3 档 token：
-
-| Token | 暗色 | 亮色 | 用途 |
-|-------|------|------|------|
-| `--glass-bg` | `rgba(255, 255, 255, 0.10)` | `rgba(255, 255, 255, 0.55)` | 微妙的玻璃效果（已停用，留作 token 备用） |
-| `--chrome-bg` | `rgba(13, 22, 20, 0.30)` | `rgba(255, 255, 255, 0.55)` | **所有透明组件**（`.list-card` / `.page-panel` / `.section-card` / `.lab-card` / `.music-row` / `.radar-row` / `.clock-wrap` / `.glass-card`）。0.30 透：既能看到背景的渐变 + 粒子，又有稳定的"纸面"承文字。 |
-| `--chrome-bg-strong` | `rgba(13, 22, 20, 0.50)` | `rgba(255, 255, 255, 0.70)` | **site-header / site-footer**。更厚一层，挡住底下内容穿透 header。 |
-
-```css
-/* 见 style/tokens.css */
-:root, [data-theme="dark"], .site-root[data-theme="dark"] {
-  --glass-bg: rgba(255, 255, 255, 0.10);
-  --chrome-bg: rgba(13, 22, 20, 0.30);
-  --chrome-bg-strong: rgba(13, 22, 20, 0.50);
-  ...
-}
-[data-theme="light"], .site-root[data-theme="light"] {
-  --chrome-bg: rgba(255, 255, 255, 0.55);
-  --chrome-bg-strong: rgba(255, 255, 255, 0.70);
-  ...
-}
-```
-
-> **核心判断**：薄荷 + 天空的彩色渐变背景上，文字要么落在"足够厚的玻璃面"上（0.30+），要么落在"完全不透明的面"上。0.10 那种"假装透明"的中间值反而是反效果——文字既读不清，背景又透得不够好看。
-
-## 其它踩坑：Tailwind 树摇 + on:click 失效的兜底
-
-### 坑 1：Tailwind tree-shake 掉 `format!()` 拼出来的 class
-
-```rust
-// ❌ 失败
-let class = format!("section-card {}", item.cls);
-view! { <A href=item.href class=class>...</A> }
-```
-
-Tailwind 的 content scan 把源文件当纯文本，看不到 `format!()` 拼出来的 token。v3 时代用 `tailwind.config.js` safelist 兜底；**v4 已迁移**（ADR-014）：配置在 `style/tailwind.css`（`@import "tailwindcss"` + `@source`），动态组合改为静态 `match`：
-
-```rust
-fn section_card_class(cls: &str) -> &'static str {
-    match cls {
-        "s-sky" => "section-card s-sky",
-        "s-mint" => "section-card s-mint",
-        "s-mix" => "section-card s-mix",
-        _ => "section-card",
-    }
-}
-```
-
-响应式 utility（如 `sm:flex`）写在 `style/tailwind.safelist.html`，由 `@source` 纳入 release 构建。
-
-> **💡 提示**
-> 优先 `class="完整 utility 字符串"`；禁止 `format!()` 拼 Tailwind class。组件层样式（`.section-card` 在 `@layer components`）始终保留；被 purge 的通常是 **utility**（`gap-4`、`max-w-4xl` 等）。
-
-### 坑 2：leptos `on:click` 失效的兜底——以及"是不是 leptos 坏"
-
-主题切换和番茄钟都遇到了"按钮没反应"。问题在 leptos 0.8 的 closure 序列化 + SSR/hydrate 边界——某些情况下 click handler 没有被 hydrate 注册。
-
-> **判断**：**leptos 本身没问题**——它是声明式 + 响应式的，UI 状态 → DOM 的双向同步非常优雅。**是我们用 leptos 的方式不对**：把 hydrate-only 的副作用（`web_sys::window()` / `localStorage`）塞进了 SSR 组件的 closure 里用 `#[cfg(feature = "hydrate")]` 切。
-
-> **🪞 反思**
-> 评估第三方工具时，分清"是工具不行"和"是工具被用错"——后者更常见。**leptos 是好工具，closure 内的 cfg(hydrate) 是错的写法**。
-
-兜底方案：把按钮做成普通 HTML `<button id="x">`，在 `<script inner_html=...>` 里挂 vanilla `addEventListener`。完全不依赖 leptos 响应式。
-
-```rust
-view! {
-    <button type="button" id="theme-toggle-btn">"切换"</button>
-    <script inner_html=r#"
-        (function() {
-            var btn = document.getElementById('theme-toggle-btn');
-            if (!btn) return;
-            btn.addEventListener('click', function() {
-                var html = document.documentElement;
-                var current = html.getAttribute('data-theme') || 'dark';
-                var next = current === 'dark' ? 'light' : 'dark';
-                html.setAttribute('data-theme', next);
-                document.body.setAttribute('data-theme', next);
-                localStorage.setItem('rcrwhyg.theme', next);
-            });
-        })();
-    "#></script>
-}
-```
-
-> **关键判断**：leptos 是声明式的，但**事件绑定**在 SSR / hydrate 边界上有时不可靠。如果一个交互功能只是"改 DOM 状态"，vanilla JS 是更鲁棒的选择。如果功能需要"改 UI 状态"，老老实实用 leptos 闭包，但 hydrate-only 副作用要拆到 hydrate-only 子组件里。
+评估第三方框架时，应区分「框架缺陷」与「用法不当」。Leptos 在声明式 UI 场景表现稳定；SSR/hydrate 边界上的事件绑定需遵循上述分层原则。
 
 ## 总结
 
-5 轮 UI 调整里 AI 反复犯的工程错误，按出现频次排：
-1. **越权 push / tag / CD**（每回 5+ 次）→ 落地：`rules/deploy-gating.md`
-2. **本地预览缺失**（3 次）→ 落地：`rules/local-verification.md`
-3. **复杂 bug 反复修不修好**（5 次主题切换）→ 经验：换假设不换方案
-4. **Tailwind 树摇 format!() 类名** → 落地：safelist
-5. **leptos on:click 失效** → 兜底：vanilla JS inline script
+### 核心要点
 
-最关键的不是这些规则文件本身，是**把规则写到位**：
+1. **部署权限**：push / tag / CD 必须逐次授权 → `rules/deploy-gating.md`
+2. **本地验证**：UI 改动需 dev server 目视确认后再 commit → `rules/local-verification.md`
+3. **SSR/hydrate**：闭包内 cfg 导致序列化不一致；hydrate-only 逻辑拆至独立函数
+4. **CSS 分层**：`--chrome-bg` / `--chrome-bg-strong` 三档 token 稳定玻璃可读性
+5. **Tailwind**：禁止 `format!()` 拼 class；v4 以 `@source` + safelist 保障 release utility；生产 CSS 门禁 `tools/check-site-css.sh`
+6. **规则冗余**：`AGENT.md` → `rules/` → `.cursor/rules/` 三层引用，降低 Agent 漏读概率
 
-- `AGENT.md` 顶端 §1 必带"部署门禁" bullet（每次会话开头会被重新读）
-- `AGENT.md` 顶端 §4 必带"用户检视" bullet
-- 引用链 `AGENT.md` → `rules/` → `.cursor/rules/rcrwhyg.mdc` 至少 3 层冗余
-
-工程上的信任不是靠"AI 这次没犯"，是靠"AI 的工作流让犯也犯不到"。
+工程协作的可信度不依赖单次表现，而依赖流程约束：即使 Agent 遗漏某条口头约定，规则文件与门禁仍应拦住越权部署与未验收提交。
 
 ## 参考资料
 
-1. 本仓库 `AGENT.md`、`rules/deploy-gating.md`、`rules/local-verification.md`
-2. 本仓库 `style/tokens.css`、`style/tailwind.css`、`style/tailwind.safelist.html`（Tailwind v4，见 ADR-014）
-3. Anthropic Claude / Claude Code 官方：https://claude.com/claude-code
+1. 本仓库 AGENT.md、rules/deploy-gating.md、rules/local-verification.md
+2. 本仓库 style/tokens.css、style/tailwind.css、style/tailwind.safelist.html、docs/adr/014-tailwind-v4.md
+3. Anthropic Claude Code 官方：https://claude.com/claude-code
 4. Leptos 0.8 文档：https://leptos.dev
-5. Tailwind CSS tree-shaking 文档：https://tailwindcss.com/docs/content-configuration#class-detection-in-depth
+5. Tailwind CSS v4 类检测文档：https://tailwindcss.com/docs/detecting-classes-in-source-files
 
-**版本信息**: 本文基于 Leptos 0.8 / Rust 1.97 / Tailwind CSS 4，写于 2026-08；v4 迁移见 `docs/adr/014-tailwind-v4.md`。
+**版本信息**: 本文基于 Leptos 0.8.20 / Axum 0.8.9 / Rust 1.98.0 / Tailwind CSS 4.3.3，写于 2026-08；生产 release tag v0.3.11。
 
 ---
 

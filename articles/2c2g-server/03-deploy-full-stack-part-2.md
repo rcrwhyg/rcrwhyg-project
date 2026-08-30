@@ -270,7 +270,7 @@ sudo tail -f /var/log/caddy/access.log
 7. HSTS Preload List：https://hstspreload.org/
 8. musl libc：https://musl.libc.org/
 
-**版本信息**: 本文基于 Caddy 2.11.4 / Leptos 0.8.20 / Axum 0.8.9 / Rust 1.97.1 / Ubuntu 26.04 LTS，写于 2026-08。
+**版本信息**: 本文基于 Caddy 2.11.4 / Leptos 0.8.20 / Axum 0.8.9 / Rust 1.98.0 / Ubuntu 26.04 LTS，写于 2026-08。
 
 ---
 

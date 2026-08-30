@@ -81,7 +81,7 @@
 6. 阿里云轻量应用服务器：https://www.aliyun.com/product/swas
 7. 阿里云对象存储 OSS：https://www.aliyun.com/product/oss
 
-**版本信息**: 本文基于 Leptos 0.8.20 / Axum 0.8.9 / Rust 1.97.1 / PostgreSQL 16，写于 2026-08。
+**版本信息**: 本文基于 Leptos 0.8.20 / Axum 0.8.9 / Rust 1.98.0 / PostgreSQL 16，写于 2026-08。
 
 ---
 

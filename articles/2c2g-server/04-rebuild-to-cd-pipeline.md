@@ -145,7 +145,7 @@ tar -xJf zig.tar.xz -C /usr/local/lib
 6. PGDG apt 源说明：https://wiki.postgresql.org/wiki/Apt
 7. systemd 单元加固指引：https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html
 
-**版本信息**: 本文基于 Ubuntu 26.04 LTS (resolute) / PostgreSQL 18 (PGDG) / Caddy 2.11.4 / Rust 1.97.1 / Leptos 0.8.20，写于 2026-08。
+**版本信息**: 本文基于 Ubuntu 26.04 LTS (resolute) / PostgreSQL 18 (PGDG) / Caddy 2.11.4 / Rust 1.98.0 / Leptos 0.8.20，写于 2026-08。
 
 ---
 

@@ -284,7 +284,7 @@ sudo systemctl restart postgresql@18-main
 6. 阿里云轻量应用服务器：https://www.aliyun.com/product/swas
 7. 阿里云 PostgreSQL 镜像：https://developer.aliyun.com/mirror/postgresql
 
-**版本信息**: 本文基于 PostgreSQL 18（PGDG 官方源）/ Ubuntu 26.04 LTS（重建时以 24.04 为备选）/ Rust 1.97.1，写于 2026-08。
+**版本信息**: 本文基于 PostgreSQL 18（PGDG 官方源）/ Ubuntu 26.04 LTS（重建时以 24.04 为备选）/ Rust 1.98.0，写于 2026-08。
 
 ---
 

@@ -16,6 +16,15 @@
 
 ---
 
+## 2026-08-31 《AI 协作的工程教训：把 5 轮 UI 调优做成 deploy-gating + 透明度模型》（`articles/2c2g-server/06-ai-collab-engineering-lessons.md`）
+- 审核轮次: 第 1 轮（措辞重构）
+- 审核人: 用户 / AI
+- 结论: 通过
+- 意见:
+  - 用户确认重构后措辞符合预期（2026-08-31）
+  - 已补充 Tailwind v3→v4 迁移与 v0.3.11 生产部署记录
+  - 措辞规范落盘：rules/article-voice.md
+
 ## 2026-08-30 《AI 协作的工程教训：把 5 轮 UI 调优做成 deploy-gating + 透明度模型》（`articles/06-ai-collab-engineering-lessons.md`）
 - 审核轮次: 待提交
 - 审核人: —

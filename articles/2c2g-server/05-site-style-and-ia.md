@@ -173,7 +173,7 @@
 4. Indie Web / Personal Web 思想：https://indieweb.org/
 5. 数字花园（Digital Garden）概念参考：https://maggieappleton.com/garden-history/
 
-**版本信息**: 本文基于 Leptos 0.8.20 / Axum 0.8.9 / Rust 1.97.1，写于 2026-08。
+**版本信息**: 本文基于 Leptos 0.8.20 / Axum 0.8.9 / Rust 1.98.0 / Tailwind CSS 4.3.3，写于 2026-08。
 
 ---
 

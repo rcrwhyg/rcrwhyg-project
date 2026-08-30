@@ -15,9 +15,10 @@ Metadata: `Cargo.toml` `[package.metadata.leptos]`.
 
 Build notes:
 
-- `.cargo/config.toml` enables `--cfg erase_components` (Leptos/thaw + rustc 1.97)
+- `.cargo/config.toml` enables `--cfg erase_components` (Leptos/thaw + rustc 1.97+)
 - `src/lib.rs` sets `#![recursion_limit = "512"]`
 - Thaw comes from **git** (`thaw-ui/thaw`), not crates.io beta
+- **Tailwind CSS v4.3.x only** (`style/tailwind.css` uses `@import "tailwindcss"`). `cargo leptos` resolves `which tailwindcss` — PATH 上 v3 CLI 会导致构建失败。推荐 Homebrew：`brew install tailwindcss`（`/opt/homebrew/bin` 优先于 `/usr/local/bin` 的旧 npm v3）。与 CD 对齐版本：**v4.3.3**。
 
 ## Checks
 

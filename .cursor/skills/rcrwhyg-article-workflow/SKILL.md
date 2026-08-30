@@ -7,7 +7,7 @@ description: Guides article creation for rcrwhyg — template, static gates, rev
 
 > 渠道说明：仓库内的 `articles/` 是**个人网站首发**的事实源。微信公众号【如春日午后阳光】是转载渠道——用户决定是否转载、如何排版、是否使用"阅读原文"链接回个人网站。AI 不参与公众号的发布与排版。
 
-规范全文：[rules/content-quality.md](../../../rules/content-quality.md)、[specs/article-template.md](../../../specs/article-template.md)。
+规范全文：[rules/content-quality.md](../../../rules/content-quality.md)、[rules/article-voice.md](../../../rules/article-voice.md)（**措辞与文体，撰写前必读**）、[specs/article-template.md](../../../specs/article-template.md)。
 
 ## 快速流程
 
@@ -20,6 +20,15 @@ description: Guides article creation for rcrwhyg — template, static gates, rev
 7. `content:` 前缀提交；状态更新 `articles/README.md`
 8. 用户审核，意见记 `docs/article-reviews.md`
 9. 用户确认为最终版后，自行决定是否转载到微信公众号【如春日午后阳光】（用其指定工具，可加"阅读原文"指向个人网站 permalink）
+
+## 措辞（成熟、稳重）
+
+撰写或重构文章前读取 [rules/article-voice.md](../../../rules/article-voice.md)。要点：
+
+- 工程复盘体：现象 → 根因 → 措施 → 仓库落点（规则/ADR/脚本路径）
+- 避免口语与情绪化；「问题 N / 教训 N」优于「坑 N」
+- 标杆：`articles/2c2g-server/06-ai-collab-engineering-lessons.md`
+- 修订栈版本时，同步更新同合集全部文章的「版本信息」行
 
 ## 硬规则
 

@@ -55,6 +55,10 @@ fn example() {}
 **版权声明**: 本文原创发布于个人网站 https://rcrwhyg.com/articles/<permalink>/，作者：如春日午后阳光。未经授权请勿转载。
 ```
 
+## 措辞与文体
+
+撰写前必读 [rules/article-voice.md](../rules/article-voice.md)。本项目文章基调为**成熟、稳重的工程复盘**；实战类推荐「背景 → 编号问题/教训 → 总结」结构。标杆范文：`articles/2c2g-server/06-ai-collab-engineering-lessons.md`。
+
 ## 元素规范
 
 ### 摘要
