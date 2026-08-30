@@ -57,7 +57,7 @@ jobs:
       - name: Verify build tools
         run: |
           cargo leptos --version
-          cargo zigbuild --version
+          cargo-zigbuild --version
 
       # ----- Zig（prebuilt tarball，cache 整目录） -----
       - name: Cache Zig
