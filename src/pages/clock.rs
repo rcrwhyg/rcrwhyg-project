@@ -1,234 +1,150 @@
 use leptos::prelude::*;
-#[cfg(feature = "hydrate")]
-use wasm_bindgen::JsCast;
 
-/// Pomodoro timer. Pure-frontend — no server fn, no JS file.
+/// 番茄钟。当前采用 vanilla JS 实现（纯前端、无 server fn）。
 ///
-/// Default work = 25min, break = 5min. The sky progress ring empties
-/// clockwise; mint buttons (start/pause/reset) are the primary actions.
+/// ⚠️ 为什么是 vanilla JS（临时替代，非终态）：
+/// 这一版重写前，leptos 0.8 的 `on:click` 闭包在 SSR/hydrate 边界反复
+/// 绑定不上（按钮没反应）。已确认是闭包序列化在 SSR/hydrate 不一致导致，
+/// 规则见 `rules/leptos-ssr-hydrate.md`。为不再阻塞，先回退到
+/// 验证过的 vanilla JS 方案让站点能上线。
 ///
-/// The tick loop is hydrate-only (needs `web_sys` + `wasm_bindgen`); on SSR
-/// the page renders the static shell with a "client only" note.
+/// TODO(leptos): 等对 leptos 0.8 的 SSR/hydrate 事件绑定吃透后，
+/// 把这里换成 leptos 闭包方案（见 ThemeControls 的写法参考）。
 #[component]
 pub fn ClockPage() -> impl IntoView {
     view! {
-        <section class="page-panel mx-auto my-8 max-w-md px-4">
-            <h1 class="page-title mb-2 text-center">
-                <span class="accent">"番茄钟"</span>
-            </h1>
-            <p class="mb-6 text-center dim-text">
-                "纯前端专注计时。切到前台会更准。"
-            </p>
-            <ClockIsland />
+        <section class="mx-auto my-8 max-w-4xl px-4 flex justify-center">
+            <div class="clock-wrap">
+                <div class="clock-mode">
+                    <button type="button" class="is-active" id="clock-mode-work">"工作 25"</button>
+                    <button type="button" id="clock-mode-break">"休息 5"</button>
+                </div>
+
+                <div class="clock-ring">
+                    <svg viewBox="0 0 240 240" class="h-full w-full -rotate-90">
+                        <circle
+                            cx="120"
+                            cy="120"
+                            r="110"
+                            fill="none"
+                            stroke="var(--glass-border)"
+                            stroke-width="10"
+                        ></circle>
+                        <circle
+                            id="clock-ring-progress"
+                            cx="120"
+                            cy="120"
+                            r="110"
+                            fill="none"
+                            stroke="var(--accent-2)"
+                            stroke-width="10"
+                            stroke-linecap="round"
+                        ></circle>
+                    </svg>
+                    <div class="clock-time" id="clock-time-text">"25:00"</div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="button" class="btn" id="clock-start">"开始"</button>
+                    <button type="button" class="btn secondary" id="clock-pause" disabled>"暂停"</button>
+                    <button type="button" class="btn ghost" id="clock-reset">"重置"</button>
+                </div>
+            </div>
         </section>
-    }
-}
 
-/// Client-only timer. On SSR this still renders, but with a static
-/// `25:00` and inert controls.
-#[component]
-fn ClockIsland() -> impl IntoView {
-    let mode = RwSignal::new(0_u8);
-    let total_secs: Signal<u64> = Signal::derive(move || match mode.get() {
-        1 => 5 * 60,
-        _ => 25 * 60,
-    });
-    let remaining_secs = RwSignal::new(25_u64 * 60);
-    let running = RwSignal::new(false);
+        <script inner_html=r#"
+            (function() {
+                var TIMES = { work: 25 * 60, 'break': 5 * 60 };
+                var RADIUS = 110;
+                var CIRC = 2 * Math.PI * RADIUS;
 
-    // tick_handle / interval logic only exists on the client.
-    #[cfg(feature = "hydrate")]
-    let tick_handle: RwSignal<Option<i32>> = RwSignal::new(None);
+                var mode = 'work';
+                var remaining = TIMES.work;
+                var running = false;
+                var interval = null;
 
-    let switch_mode = move |next: u8| {
-        #[cfg(feature = "hydrate")]
-        {
-            if let Some(h) = tick_handle.get_untracked() {
-                if let Some(w) = web_sys::window() {
-                    w.clear_interval_with_handle(h);
+                var timeText = document.getElementById('clock-time-text');
+                var ring = document.getElementById('clock-ring-progress');
+                var workBtn = document.getElementById('clock-mode-work');
+                var breakBtn = document.getElementById('clock-mode-break');
+                var startBtn = document.getElementById('clock-start');
+                var pauseBtn = document.getElementById('clock-pause');
+                var resetBtn = document.getElementById('clock-reset');
+
+                if (!timeText || !ring) return;
+
+                function fmt(secs) {
+                    var m = Math.floor(secs / 60);
+                    var s = secs % 60;
+                    return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
                 }
-                tick_handle.set(None);
-            }
-        }
-        running.set(false);
-        mode.set(next);
-        remaining_secs.set(if next == 1 { 5 * 60 } else { 25 * 60 });
-    };
 
-    let start = move |_: leptos::ev::MouseEvent| {
-        #[cfg(feature = "hydrate")]
-        {
-            if running.get_untracked() {
-                return;
-            }
-            running.set(true);
+                function render() {
+                    timeText.textContent = fmt(remaining);
+                    var total = TIMES[mode];
+                    var frac = 1 - remaining / total;
+                    var offset = CIRC * Math.max(0, Math.min(1, frac));
+                    ring.style.strokeDasharray = CIRC.toFixed(2);
+                    ring.style.strokeDashoffset = offset.toFixed(2);
+                }
 
-            let cb = wasm_bindgen::closure::Closure::wrap(Box::new(move || {
-                let next = remaining_secs.get_untracked().saturating_sub(1);
-                remaining_secs.set(next);
-                if next == 0 {
-                    if let Some(h) = tick_handle.get_untracked() {
-                        if let Some(w) = web_sys::window() {
-                            w.clear_interval_with_handle(h);
-                        }
+                function setMode(next) {
+                    if (interval) { clearInterval(interval); interval = null; }
+                    running = false;
+                    mode = next;
+                    remaining = TIMES[next];
+                    workBtn.classList.toggle('is-active', next === 'work');
+                    breakBtn.classList.toggle('is-active', next === 'break');
+                    startBtn.disabled = false;
+                    pauseBtn.disabled = true;
+                    startBtn.textContent = '开始';
+                    render();
+                }
+
+                function tick() {
+                    remaining = Math.max(0, remaining - 1);
+                    if (remaining === 0) {
+                        if (interval) { clearInterval(interval); interval = null; }
+                        running = false;
+                        startBtn.disabled = false;
+                        pauseBtn.disabled = true;
+                        startBtn.textContent = '开始';
                     }
-                    tick_handle.set(None);
-                    running.set(false);
+                    render();
                 }
-            }) as Box<dyn FnMut()>);
 
-            if let Some(window) = web_sys::window() {
-                if let Ok(handle) = window.set_interval_with_callback_and_timeout_and_arguments_0(
-                    cb.as_ref().unchecked_ref(),
-                    1000,
-                ) {
-                    tick_handle.set(Some(handle));
-                } else {
-                    running.set(false);
-                }
-            } else {
-                running.set(false);
-            }
-            cb.forget();
-        }
-        // SSR: no-op — start button just toggles `running` but nothing
-        // happens. The page is only useful after hydration anyway.
-        #[cfg(not(feature = "hydrate"))]
-        {
-            let _ = running.get();
-        }
-    };
+                workBtn.addEventListener('click', function() { setMode('work'); });
+                breakBtn.addEventListener('click', function() { setMode('break'); });
 
-    let pause = move |_: leptos::ev::MouseEvent| {
-        #[cfg(feature = "hydrate")]
-        {
-            if let Some(h) = tick_handle.get_untracked() {
-                if let Some(w) = web_sys::window() {
-                    w.clear_interval_with_handle(h);
-                }
-            }
-            tick_handle.set(None);
-        }
-        running.set(false);
-    };
+                startBtn.addEventListener('click', function() {
+                    if (running) return;
+                    running = true;
+                    startBtn.disabled = true;
+                    pauseBtn.disabled = false;
+                    startBtn.textContent = '进行中';
+                    interval = setInterval(tick, 1000);
+                });
 
-    let reset = move |_: leptos::ev::MouseEvent| {
-        // The pause callback expects a MouseEvent; pass a synthetic one.
-        pause(leptos::ev::MouseEvent::new("click").unwrap());
-        remaining_secs.set(total_secs.get_untracked());
-    };
+                pauseBtn.addEventListener('click', function() {
+                    if (interval) { clearInterval(interval); interval = null; }
+                    running = false;
+                    startBtn.disabled = false;
+                    pauseBtn.disabled = true;
+                    startBtn.textContent = '开始';
+                });
 
-    // On client, clear any pending interval when the component unmounts.
-    #[cfg(feature = "hydrate")]
-    {
-        let tick_handle_for_cleanup = tick_handle;
-        Effect::new(move |_| {
-            on_cleanup(move || {
-                if let Some(h) = tick_handle_for_cleanup.get_untracked() {
-                    if let Some(w) = web_sys::window() {
-                        w.clear_interval_with_handle(h);
-                    }
-                }
-            });
-        });
-    }
+                resetBtn.addEventListener('click', function() {
+                    if (interval) { clearInterval(interval); interval = null; }
+                    running = false;
+                    startBtn.disabled = false;
+                    pauseBtn.disabled = true;
+                    startBtn.textContent = '开始';
+                    remaining = TIMES[mode];
+                    render();
+                });
 
-    // SVG ring (sky color, empties as time passes).
-    let radius = 110.0_f64;
-    let circumference = 2.0 * std::f64::consts::PI * radius;
-    let dash_style = move || {
-        let total = total_secs.get() as f64;
-        let remaining = remaining_secs.get() as f64;
-        let frac = if total > 0.0 {
-            1.0 - remaining / total
-        } else {
-            0.0
-        };
-        let offset = circumference * frac.clamp(0.0, 1.0);
-        format!(
-            "stroke-dasharray: {:.2}; stroke-dashoffset: {:.2};",
-            circumference, offset
-        )
-    };
-
-    let time_text = Signal::derive(move || {
-        let total = remaining_secs.get();
-        let m = total / 60;
-        let s = total % 60;
-        format!("{:02}:{:02}", m, s)
-    });
-
-    let is_work = move || mode.get() == 0;
-    let is_break = move || mode.get() == 1;
-
-    view! {
-        <div class="clock-wrap">
-            <div class="clock-mode">
-                <button
-                    type="button"
-                    class=move || if is_work() { "is-active" } else { "" }
-                    on:click=move |_| switch_mode(0)
-                >
-                    "工作 25"
-                </button>
-                <button
-                    type="button"
-                    class=move || if is_break() { "is-active" } else { "" }
-                    on:click=move |_| switch_mode(1)
-                >
-                    "休息 5"
-                </button>
-            </div>
-
-            <div class="clock-ring">
-                <svg viewBox="0 0 240 240" class="h-full w-full -rotate-90">
-                    <circle
-                        cx="120"
-                        cy="120"
-                        r=radius
-                        fill="none"
-                        stroke="var(--glass-border)"
-                        stroke-width="10"
-                    />
-                    <circle
-                        cx="120"
-                        cy="120"
-                        r=radius
-                        fill="none"
-                        stroke="var(--accent-2)"
-                        stroke-width="10"
-                        stroke-linecap="round"
-                        attr:style=dash_style
-                    />
-                </svg>
-                <div class="clock-time">{time_text}</div>
-            </div>
-
-            <div class="flex gap-3">
-                <button
-                    type="button"
-                    class="btn"
-                    on:click=start
-                    disabled=move || running.get()
-                >
-                    {move || if running.get() { "进行中" } else { "开始" }}
-                </button>
-                <button
-                    type="button"
-                    class="btn secondary"
-                    on:click=pause
-                    disabled=move || !running.get()
-                >
-                    "暂停"
-                </button>
-                <button
-                    type="button"
-                    class="btn ghost"
-                    on:click=reset
-                >
-                    "重置"
-                </button>
-            </div>
-        </div>
+                render();
+            })();
+        "#></script>
     }
 }
