@@ -2,33 +2,27 @@
 module.exports = {
     content: {
         relative: true,
-        files: ["./*.html", "./src/**/*.rs"],
+        files: ["./*.html", "./style/tailwind.safelist.html", "./src/**/*.rs"],
         transform: {
-            rs: (content) => content.replace(/(?:^|\s)class:/g, ' '),
+            // attr:class= → class= so extract regex sees Leptos router links.
+            rs: (content) => content.replace(/(?:^|\s)attr:class/g, " class"),
         },
         extract: {
             rs: (content) => {
                 const matches = content.match(/class\s*=\s*["'{][^"'}]*["'}]/g);
                 if (!matches) return [];
 
-                return matches.flatMap(match => {
-                    const classContent = match.match(/["']{([^}]+)}["']/)?.[1] ||
+                return matches.flatMap((match) => {
+                    const classContent =
+                        match.match(/["']{([^}]+)}["']/)?.[1] ||
                         match.match(/["']([^"']+)["']/)?.[1];
-                    return classContent ? classContent.split(/\s+/) : [];
+                    return classContent ? classContent.split(/\s+/).filter(Boolean) : [];
                 });
-            }
+            },
         },
     },
-    // 这些 class 在 .rs 里是 format!("<class> {}", ...) 拼出来的，content
-    // scan 看不到，所以手动列出来防止被 tree-shake 掉。
-    //
-    // 规则：
-    // 1. 任何 `attr:class={format!("xxx {}", y)}` 的写法，xxx 必须在这里。
-    // 2. xxx 跟其它 modifier（s-mint / s-sky / s-mix）也要逐条列出，
-    //    safelist 不支持自动展开 modifier。
-    // 3. 不想加 safelist 也可以：把 format 拆成字面量分支
-    //    `if y { "xxx mint" } else { "xxx sky" }`，字面量会被 scan 到。
-    // 详见 articles/06-ai-collab-engineering-lessons.md "坑 1" 节。
+    // format! / attr:class 动态 class、responsive variant 需 safelist。
+    // 详见 articles/2c2g-server/06-ai-collab-engineering-lessons.md "坑 1"。
     safelist: [
         "section-card",
         "section-card::before",
@@ -50,4 +44,4 @@ module.exports = {
         },
     },
     plugins: [],
-}
+};

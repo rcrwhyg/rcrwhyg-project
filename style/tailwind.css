@@ -18,6 +18,13 @@
     font-family: var(--font-body);
     text-align: left;
   }
+
+  /* Thaw ConfigProvider 会注入 Fluent 灰底；站点 chrome 走 tokens，此处透明化。 */
+  .thaw-config-provider {
+    background: transparent !important;
+    color: inherit !important;
+    min-height: 100%;
+  }
 }
 
 @layer components {
