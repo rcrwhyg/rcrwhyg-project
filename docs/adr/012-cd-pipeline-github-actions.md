@@ -19,9 +19,10 @@ Add a second workflow, `.github/workflows/cd.yml`, that:
   with a `reason` input (manual hotfix / wiring check).
 - **Runs on:** `ubuntu-latest` runner, single job `deploy-production`,
   `environment: production` (GitHub manual approval gate).
-- **Builds** with the same toolchain + cache combo as CI, plus
-  `cargo install --locked cargo-leptos` and
-  `cargo install --locked cargo-zigbuild`.
+- **Builds** with the same toolchain + cache combo as CI, plus pinned
+  **prebuilt** `cargo-leptos` / `cargo-zigbuild` via
+  [`taiki-e/install-action`](https://github.com/taiki-e/install-action)
+  (`fallback: none` — no silent `cargo install` source builds).
 - **Deploys** by streaming the built binary, `target/site/`, and content dirs (`articles/`, `data/`, `content/`) to the VPS via `scp` + `ssh`. The swap logic lives in `deploy/remote.sh`.
 - **Smoke tests** `/health`, `/`, and `/articles` on the VPS over SSH.
 - **Finalizes** by writing a TSV line to `/opt/rcrwhyg/var/deploy.log`

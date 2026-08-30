@@ -21,6 +21,9 @@ env:
   RUSTFLAGS: '-C strip=symbols'
   VPS_HOST: ${{ secrets.VPS_HOST }}
   VPS_USER: ${{ secrets.VPS_USER }}
+  # Pin build tools — install-action pulls prebuilt GitHub Release assets (seconds, not minutes).
+  CARGO_LEPTOS_VERSION: '0.3.7'
+  CARGO_ZIGBUILD_VERSION: '0.23.3'
 
 jobs:
   deploy-production:
@@ -43,38 +46,18 @@ jobs:
       - name: Cache cargo registry + build artifacts
         uses: Swatinem/rust-cache@v2
 
-      # ----- 工具安装（cargo-binstall 走预编译二进制，比 source build 快 3-5 倍） -----
-      # 之前每个 release 都要 cargo install 编译 cargo-leptos (≈3min) +
-      # cargo-zigbuild (≈2min)，合计 5 分钟；现在这三个二进制都走 cache +
-      # binstall（带 cargo install 兜底），缓存命中时几秒钟，缓存未命中时
-      # 也只需下载 ≈20MB 预编译。
-      - name: Cache cargo tools (cargo-binstall / cargo-leptos / cargo-zigbuild)
-        uses: actions/cache@v4
-        id: cargo-tools-cache
+      # Prebuilt binaries from GitHub Releases via taiki-e/install-action.
+      # Avoids cargo install / binstall source-build fallbacks (each can cost 3–5 min).
+      - name: Install cargo-leptos + cargo-zigbuild (prebuilt, pinned)
+        uses: taiki-e/install-action@v2
         with:
-          path: |
-            ~/.cargo/bin/cargo-binstall
-            ~/.cargo/bin/cargo-leptos
-            ~/.cargo/bin/cargo-zigbuild
-          key: ${{ runner.os }}-cargo-tools-v2
+          tool: cargo-leptos@${{ env.CARGO_LEPTOS_VERSION }},cargo-zigbuild@${{ env.CARGO_ZIGBUILD_VERSION }}
+          fallback: none
 
-      - name: Install cargo-binstall
-        if: steps.cargo-tools-cache.outputs.cache-hit != 'true'
-        run: cargo install --locked cargo-binstall
-
-      - name: Install cargo-leptos (binstall with cargo install fallback)
-        if: steps.cargo-tools-cache.outputs.cache-hit != 'true'
+      - name: Verify build tools
         run: |
-          cargo binstall cargo-leptos \
-            --no-confirm --strategies minimum-versions --locked || \
-            cargo install --locked cargo-leptos
-
-      - name: Install cargo-zigbuild (binstall with cargo install fallback)
-        if: steps.cargo-tools-cache.outputs.cache-hit != 'true'
-        run: |
-          cargo binstall cargo-zigbuild \
-            --no-confirm --strategies minimum-versions --locked || \
-            cargo install --locked cargo-zigbuild
+          cargo leptos --version
+          cargo zigbuild --version
 
       # ----- Zig（prebuilt tarball，cache 整目录） -----
       - name: Cache Zig
@@ -101,6 +84,9 @@ jobs:
 
       - name: Build site (WASM + CSS)
         run: cargo leptos build --release
+
+      - name: Verify site CSS (layout utilities not purged)
+        run: bash tools/check-site-css.sh target/site/pkg/rcrwhyg-server.css
 
       - name: Build static musl server
         run: cargo zigbuild --release --target x86_64-unknown-linux-musl --features ssr --bin rcrwhyg-server
