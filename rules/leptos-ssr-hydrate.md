@@ -83,35 +83,31 @@ fn HydrateOnlyEffect() -> impl IntoView {
 ## 对写法 C：cfg 在辅助函数里（Effect 调辅助函数）
 
 ```rust
-// ✅ closure 零 cfg，cfg 整块在辅助函数
+// ✅ closure 零 cfg，cfg 整块在辅助函数（示例：偏好类 DOM 写入；站点主题已固定 dark，无切换）
 #[component]
-pub fn ThemeControls() -> impl IntoView {
-    let theme = RwSignal::new(ThemeMode::Dark);
+pub fn PreferenceExample() -> impl IntoView {
+    let mode = RwSignal::new(false);
 
     let on_click = move |_| {
-        theme.update(|t| *t = t.toggle());   // 闭包零 cfg
+        mode.update(|v| *v = !*v);
     };
 
     Effect::new(move |_| {
-        apply_theme_to_dom(theme.get());      // 调辅助函数
+        apply_preference_to_dom(mode.get());
     });
 
     view! {
         <button on:click=on_click class="control-btn">
-            {move || match theme.get() { ... }}
+            "Toggle example"
         </button>
     }
 }
 
 #[cfg(feature = "hydrate")]
-fn apply_theme_to_dom(t: ThemeMode) {
-    // 整个函数在 SSR 阶段不存在，hydrate 阶段才有 web_sys 代码
+fn apply_preference_to_dom(enabled: bool) {
     if let Some(window) = web_sys::window() {
         if let Some(html) = window.document_element() {
-            let _ = html.set_attribute("data-theme", t.as_str());
-        }
-        if let Some(storage) = window.local_storage() {
-            let _ = storage.set_item("rcrwhyg.theme", t.as_str());
+            let _ = html.set_attribute("data-example", if enabled { "on" } else { "off" });
         }
     }
 }
@@ -128,8 +124,7 @@ view! {
             var btn = document.getElementById('theme-toggle-btn');
             if (!btn) return;
             btn.addEventListener('click', function() {
-                document.documentElement.setAttribute('data-theme', 'light');
-                try { localStorage.setItem('rcrwhyg.theme', 'light'); } catch (e) {}
+                document.documentElement.setAttribute('data-example', 'on');
             });
         })();
     "#></script>

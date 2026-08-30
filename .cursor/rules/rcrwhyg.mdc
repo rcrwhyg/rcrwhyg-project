@@ -13,10 +13,10 @@ globs:
 - Server-only dependencies must be `optional` and enabled only via the `ssr` feature.
 - Prefer CSS variables from `style/tokens.css` over hard-coded brand colors in Rust views.
 - Visual direction: **mint + sky** (`#2DBE7E` / `#4FA3E0`) with **shadow + glow** elevation and **glass** surfaces sitewide; dynamic background is a 135° linear-gradient (mint → lavender → sky) with 200 deterministic drifting particles. See [docs/palette-preview.html](../../docs/palette-preview.html) and [rules/deploy-gating.md](../../rules/deploy-gating.md) for deploy rules.
-- Themes: **dark and light only**. Do not reintroduce Terminal / dual-shell style modes (ADR-003 / superseded ADR-010).
+- Themes: **fixed dark only** (`data-theme="dark"`). No light mode or theme toggle (ADR-003 / ADR-004).
 - Keep a single Leptos route tree and a single site chrome.
 - Site is diversified: new areas beyond blog/tools are allowed; register routes + header nav.
-- Content source of truth for essays is site-owned `posts`, not multi-platform `articles`.
+- Content source of truth for published essays is **`articles/`** (git + CD), not DB `posts`.
 - Prefer Leptos ecosystem crates (thaw, leptos-use, …) and Suspense/Transition for async UI; design toward islands.
 - Axum serves HTTP, and will serve WebSocket + SSE in-process — do not split realtime into another service by default.
 - Production server artifact is static **musl** via **cargo-zigbuild**; prefer musl-friendly deps (`rustls`).

@@ -10,7 +10,7 @@
 | Playwright e2e | **Stale scaffold** | `end2end/tests/example.spec.ts` still expects old Leptos welcome copy — update before relying on it |
 | Coverage % tooling | **Not enforced** | No `cargo-llvm-cov` / tarpaulin gate yet |
 
-Do **not** claim high coverage. Prefer adding tests with each feature (posts write path, auth, tools).
+Do **not** claim high coverage. Prefer adding tests with each feature (articles parsing, auth, tools).
 
 ## Pyramid (what to write)
 
@@ -34,7 +34,7 @@ cargo check --lib --features hydrate --target wasm32-unknown-unknown
 Integration tests that need schema:
 
 ```bash
-psql "$DATABASE_URL" -f sql/posts.sql -f sql/seed_posts.sql
+psql "$DATABASE_URL" -f sql/auth.sql
 cargo test --features ssr
 ```
 

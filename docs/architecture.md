@@ -1,143 +1,133 @@
 # Architecture — 如春日午后阳光
 
-Personal site: **Leptos 0.8 SSR-first**, **Axum** (HTTP + planned WebSocket/SSE), **cargo-leptos**, **Tailwind**, optional **Postgres/SQLx**. Production server binary is a **static musl** artifact via **cargo-zigbuild**.
+Personal site: **Leptos 0.8 SSR-first**, **Axum**, **cargo-leptos**, **Tailwind**, optional **Postgres/SQLx** (auth only). Production server binary is a **static musl** artifact via **cargo-zigbuild**.
 
 ## Product shape
 
-- **Diversified site areas** — not limited to blog + tools. New sections register like tools and share one route tree + one chrome.
-- Current areas: home, blog/essays (`posts`), toolbox (`/tools` + registry)
-- **Single UI chrome** (fixed header + content). Themes: **dark** (default) + **light** only via `data-theme` (ADR-003)
-- Visual: **calm-tech** dynamic backdrop (grid/orbs/beams + mouse-follow glow) — Chinese-first; not pixel-primary (ADR-004)
-- Export/import: Markdown frontmatter in `src/domain/export.rs` (no third-party sync yet)
+- **Diversified site areas** — home hub, articles, tools, radar, lab, about, music, clock; one route tree + one chrome.
+- **Single visual theme** — fixed **dark** mint/sky palette (`data-theme="dark"`); no user toggle.
+- Visual: mint + sky **calm-tech** gradient backdrop with drifting particles; **0.30 glass** surfaces (`--chrome-bg`).
+- Content: **`articles/`** is the only publish path (git + CD). Admin session is for ops, not in-browser editing.
 
 ## Rendering & interactivity
 
 | Principle | Practice |
 |-----------|----------|
 | SSR-first | HTML from server; SEO and first paint from SSR |
-| Prefer islands over full-page hydrate long-term | Interactive widgets as `#[island]` / islands-router; keep WASM small on 2C2G |
-| Async UI | `Resource` / server functions + `<Suspense>` / `<Transition>` for loading boundaries |
-| Fine-grained reactivity | Signals; avoid coarse re-render patterns |
-| Ecosystem | Prefer [awesome-leptos](https://github.com/leptos-rs/awesome-leptos) crates: **thaw** (UI), **leptos-use** (hooks), etc. |
+| Prefer islands long-term | Interactive widgets as islands; keep WASM small on 2C2G |
+| Async UI | `Resource` + server functions + `<Suspense>` |
+| Ecosystem | **thaw** (UI), **leptos-use** (hooks); site chrome in Tailwind + `style/tokens.css` |
 
-Thaw + Tailwind: use Thaw for interactive controls; keep site chrome/tokens in Tailwind + CSS variables. Do not fork a second design system.
-
-**Thaw pin:** use git `https://github.com/thaw-ui/thaw` until crates.io `0.5.0-beta` builds cleanly on rustc ≥ 1.97. Project enables `erase_components` via `.cargo/config.toml`.
+**Thaw pin:** git `https://github.com/thaw-ui/thaw` until crates.io `0.5.0-beta` builds on rustc ≥ 1.97.
 
 ## Transport (Axum)
 
-Axum is the **process edge**, not “HTTP only”:
-
 | Channel | Use |
 |---------|-----|
-| HTTP | Pages, REST-ish APIs, server functions, `/health` |
-| WebSocket | Bidirectional realtime — stub at `/ws/echo` |
-| SSE | One-way server push — stub at `/sse/heartbeat` |
+| HTTP | Pages, server functions, `/health` |
+| WebSocket | Stub `/ws/echo` |
+| SSE | Stub `/sse/heartbeat` |
 
-Prefer nesting `/api`, `/ws`, `/sse` beside `leptos_routes`. Shared state via Axum `State` / Leptos context. All realtime code stays behind `ssr`.
+Shared state via Axum `State` / Leptos context. Realtime behind `ssr` feature.
 
-## Module map (target)
+## Module map
 
 ```text
 src/
-  app/           # App router, theme, layout, CyberBackground
-  pages/         # route views per site area
-  components/    # shared UI (+ thaw wrappers over time)
-  domain/        # Post, ToolMeta, SiteArea, export/import
+  app/           # router, theme, layout, DynamicBackground, admin_session
+  pages/         # route views per area
+  components/    # BeianFooter, …
+  domain/        # export/import helpers (legacy Post types)
   tools/         # tool registry
-  areas/         # (planned) site-area registry beyond blog/tools
-  server/        # AppState, #[server], /health, SSE, WS (ssr)
-  main.rs        # Axum bootstrap
-  lib.rs         # hydrate / islands client entry
+  server/        # articles, auth, area data loaders, markdown, /health, SSE, WS
+  bin/create-admin.rs
+  main.rs
 style/
-  tokens.css
+  tokens.css     # mint/sky dark tokens (+ light palette reserved for palette-preview)
   tailwind.css
+articles/        # canonical Markdown (合集子目录 + NN-slug.md)
+data/            # radar.json, music.json, lab.json
+content/         # about.md
 sql/
-  posts.sql      # canonical blog schema
-  articles.sql   # legacy — do not extend
+  auth.sql       # admin sessions (Postgres)
 docs/
-  architecture.md
-  build-musl.md
-  adr/
 ```
 
 ## Routes (current)
 
 | Path | Page |
 |------|------|
-| `/` | Home |
-| `/blog` | Blog list (`list_published_posts`) |
-| `/blog/:slug` | Post detail (`get_post_by_slug` + Markdown→HTML) |
-| `/admin` | Solo admin dashboard (session required) |
+| `/` | Home hub (carousel + recent articles) |
+| `/articles` | Article index (合集 + 随笔) |
+| `/articles/:slug` | Article detail (Markdown → HTML) |
+| `/blog`, `/blog/:slug` | **308** → `/articles` (legacy) |
+| `/tools`, `/tools/echo` | Toolbox |
+| `/radar` | Learning radar (`data/radar.json`) |
+| `/lab` | Lab demos (`data/lab.json`) |
+| `/about` | About (`content/about.md`) |
+| `/music` | Playlist (`data/music.json`) |
+| `/clock` | Pomodoro timer |
+| `/admin` | Admin dashboard (session) |
 | `/admin/login` | Admin login |
-| `/admin/posts` | Post list / CRUD (session required) |
-| `/admin/posts/new` | Create post |
-| `/admin/posts/:id/edit` | Edit post |
-| `/tools` | Tool index |
-| `/tools/echo` | Example tool |
 
-One route tree only. New areas add routes + header nav + registry entries.
+Logged-in admin sees **后台** + **退出** in header; public nav unchanged.
 
-## Build & deploy (locked)
+## Content model (articles)
 
-**Goal:** pure SSR delivery + **static musl server binary** for the VPS.
+| Topic | Choice |
+|-------|--------|
+| Source of truth | `articles/<合集>/NN-slug.md` or根目录 `NN-slug.md`（随笔） |
+| Collection meta | `articles/<合集>/_meta.json`（`title`, 可选 `placeholder`） |
+| Deploy | CD ships entire `articles/` tree + `data/` + `content/` into site root |
+| Index UI | Flat list, 倒序；右上角徽章显示合集名，无合集为「随笔」 |
+| Sort | File number desc → date desc → slug |
+| Exclude | `README.md`, `templates/`, non-`NN-slug` names, `> **站点发布**: 否` |
+| Admin | CLI `create-admin`; session for `/admin` ops — **no** browser article CRUD |
 
-1. Front assets / WASM islands: `cargo leptos build --release` → `target/site`
-2. Server binary (static): `cargo zigbuild --release --target x86_64-unknown-linux-musl --features ssr`  
-   (or `aarch64-unknown-linux-musl` if the VPS is ARM)
-3. Ship: musl binary + `site/` directory; no glibc runtime on the server required for the binary itself
+Legacy `sql/posts.sql` is deprecated; do not extend.
 
-See [build-musl.md](build-musl.md). Prefer crates that link cleanly on musl (avoid glibc-only native deps; prefer pure Rust TLS like `rustls`).
+## Theme & layout
+
+- **Dark only**: `data-theme="dark"` on `html` / `body` / `.site-root`; Thaw `Theme::dark()`.
+- Tokens in `style/tokens.css`. No theme toggle, no `localStorage` preference.
+- Layout: `.site-root` flex column (`min-height: 100dvh`); fixed header; `.site-main` `padding-top: var(--site-header-h)`; footer `flex-shrink: 0` stays in viewport.
+
+## Build & deploy
+
+1. `cargo leptos build --release` → `target/site`
+2. `cargo zigbuild --release --target x86_64-unknown-linux-musl --features ssr`
+3. Ship musl binary + site assets + `articles/` + `data/` + `content/`. See [build-musl.md](build-musl.md), [deploy-vps.md](deploy-vps.md).
 
 ## Environment
 
-See [`.env.example`](../.env.example). Never commit secrets.
+See [`.env.example`](../.env.example).
 
 | Variable | Purpose |
 |----------|---------|
-| `DATABASE_URL` | Optional Postgres URL; when unset/unavailable, blog falls back to in-memory seed posts |
-| `LEPTOS_*` | Usually from `Cargo.toml` metadata |
+| `DATABASE_URL` | Postgres for **admin auth** + soft-gated tests |
+| `COOKIE_SECURE` | `false` local HTTP; `true` behind Caddy HTTPS |
+| `SESSION_TTL_HOURS` | Admin session lifetime |
+| `RATE_LIMIT_*` | Global + auth rate limits |
 
-Blog content path: apply `sql/posts.sql` (+ optional `sql/seed_posts.sql`), or rely on `domain::seed_posts` without a database.
-
-Local `.env` `DATABASE_URL` is the supported way to develop against real Postgres; the same URL feeds soft-gated DB tests ([testing.md](testing.md)).
+Articles do **not** require Postgres.
 
 ## Testing
 
-See [testing.md](testing.md). Coverage is **thin by default**; agents must extend tests with features (especially before exposing write/admin APIs — ADR-011).
+See [testing.md](testing.md). Article static checks: `./tools/check-articles.sh` (recursive under `articles/`).
 
-### Runtime endpoints (stubs)
+## Runtime endpoints
 
 | Path | Kind |
 |------|------|
-| `/health` | JSON liveness + db probe (`connected` / `unset` / `error`) |
-| `/sse/heartbeat` | SSE tick stream |
+| `/health` | JSON liveness + db probe |
+| `/sse/heartbeat` | SSE tick |
 | `/ws/echo` | WebSocket echo |
 
-## 2C2G ops
+## Related ADRs
 
-- Single process: HTTP + WS + SSE in one Axum app
-- Keep island/WASM payloads small; CRT effects = CSS
-- No microservices
-
-## Security
-
-- No secrets in source or public routes
-- Server-only crates: `optional` + `ssr`
-- WS/SSE: authenticate/rate-limit when exposing mutating channels
-
-## ADR index
-
-| ADR | Topic |
-|-----|-------|
-| 001 | Leptos + Axum stack |
-| 002 | Posts-first content |
-| 003 | Single chrome + dark/light themes |
-| 004 | Design tokens (calm-tech) |
-| 005 | Tool registry |
-| 006 | Diversified site areas |
-| 007 | Leptos ecosystem (thaw, leptos-use, Suspense, islands) |
-| 008 | WebSocket + SSE on Axum |
-| 009 | SSR musl / zigbuild |
-| 010 | ~~Terminal CLI~~ — **superseded** by 003 |
-| 011 | Solo-author publishing (proposed) |
+- [002-content-posts-first.md](adr/002-content-posts-first.md) — **superseded** by articles file model
+- [003-dual-shell.md](adr/003-dual-shell.md) — single chrome; **dark-only** theme (no toggle)
+- [004-design-tokens.md](adr/004-design-tokens.md) — calm-tech tokens
+- [006-diversified-site-areas.md](adr/006-diversified-site-areas.md)
+- [011-solo-author-publishing.md](adr/011-solo-author-publishing.md) — admin auth; publishing via git
+- [012-cd-pipeline-github-actions.md](adr/012-cd-pipeline-github-actions.md) — CD ships `articles/` subtree

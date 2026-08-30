@@ -3,7 +3,7 @@
 [![CI](https://github.com/rcrwhyg/rcrwhyg-project/actions/workflows/ci.yml/badge.svg)](https://github.com/rcrwhyg/rcrwhyg-project/actions/workflows/ci.yml)
 [![CD](https://github.com/rcrwhyg/rcrwhyg-project/actions/workflows/cd.yml/badge.svg)](https://github.com/rcrwhyg/rcrwhyg-project/actions/workflows/cd.yml)
 
-Personal site: Leptos 0.8 SSR-first + Axum (HTTP / planned WS+SSE) + Tailwind. Calm-tech UI (modern, minimal, dynamic) with dark/light themes and a dynamic mouse-follow backdrop. Production server: **static musl** via **cargo-zigbuild**.
+Personal site: Leptos 0.8 SSR-first + Axum (HTTP / planned WS+SSE) + Tailwind. Calm-tech UI (fixed **dark** theme) with a dynamic mouse-follow backdrop. Content in `articles/` (git + CD). Production server: **static musl** via **cargo-zigbuild**.
 
 ## Docs
 

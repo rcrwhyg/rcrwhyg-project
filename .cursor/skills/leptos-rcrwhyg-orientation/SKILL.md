@@ -9,7 +9,7 @@ Read [docs/architecture.md](../../../docs/architecture.md) and ADRs under [docs/
 
 ## Product
 
-Diversified personal site: blog, tools, and **future areas**. Single chrome shell, **dark/light only**, calm-tech dynamic backdrop (CJK-first), SSR-first, static musl deploy. **No Terminal mode.**
+Diversified personal site: articles, tools, radar, lab, and **future areas**. Single chrome shell, **fixed dark theme**, calm-tech dynamic backdrop (CJK-first), SSR-first, static musl deploy. **No Terminal mode.**
 
 ## Map
 
@@ -17,13 +17,14 @@ Diversified personal site: blog, tools, and **future areas**. Single chrome shel
 |------|------|
 | `src/main.rs` | Axum bootstrap: Leptos + `/health` + `/sse/*` + `/ws/*` |
 | `src/lib.rs` | hydrate / islands client entry |
-| `src/app/` | App, shell HTML, theme, layout, `CyberBackground` |
+| `src/app/` | App, shell HTML, theme, layout, `DynamicBackground` |
 | `src/pages/` | Route views per site area |
-| `src/components/` | Shared UI (theme toggle, footer, …) |
-| `src/domain/` | Post, PostSummary, PostDetail, export/import, seed |
-| `src/server/` | `AppState`, posts/ping server fns, health/SSE/WS (ssr) |
+| `src/components/` | Shared UI (footer, …) |
+| `src/domain/` | export/import, legacy Post types |
+| `src/server/` | `AppState`, articles/auth/area loaders, markdown, health/SSE/WS (ssr) |
 | `src/tools/registry.rs` | Toolbox registry |
-| `style/tokens.css` | Design tokens (dark + light) |
+| `articles/` | Canonical Markdown (collections + essays) |
+| `style/tokens.css` | Design tokens (dark production; light preview-only) |
 | `docs/build-musl.md` | zigbuild musl release |
 | `docs/testing.md` | Unit / DB integration / e2e policy |
 
@@ -41,10 +42,11 @@ Read [docs/testing.md](../../../docs/testing.md). Coverage is intentionally thin
 ## Related project skills
 
 - UI / theme / cyber bg → `leptos-ui-theme-chrome`
-- Areas / posts / tools / export → `leptos-content-and-tools`
+- Areas / articles / tools / export → `leptos-content-and-tools`
 - thaw / leptos-use / Suspense / islands → `leptos-ecosystem-patterns`
 - Build / watch / musl / tests → `leptos-cargo-workflow`
 - Solo publishing / admin auth → ADR-011 (`sql/auth.sql`, `/admin/*`, rate limits)
+- Article workflow → `rcrwhyg-article-workflow`
 
 ## Global skills
 

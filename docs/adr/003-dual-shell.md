@@ -1,23 +1,25 @@
-# ADR-003: Single chrome shell + dark/light themes
+# ADR-003: Single chrome shell + fixed dark theme
 
 ## Status
 
-Accepted (supersedes dual Modern/Terminal shell decision)
+Accepted (supersedes dual Modern/Terminal shell decision; **2026-08** update: dark-only, no user toggle)
 
 ## Context
 
-Terminal / dual-shell UX added complexity without matching the Chinese-first product focus. The site needs one clear chrome and only two appearance modes.
+Terminal / dual-shell UX added complexity without matching the Chinese-first product focus. The site needs one clear chrome and a consistent calm-tech look. A dark/light toggle was tried and removed — product direction is **fixed dark**.
 
 ## Decision
 
-- **One** Leptos route tree and **one** site chrome (fixed header + content)
-- Appearance modes: **`dark`** (default) and **`light` only** — no Terminal / Modern style switch
-- Persist theme in `localStorage` key `rcrwhyg.theme`
-- Reflect via `data-theme` on `html` / `body` / `.site-root`
-- Dynamic calm-tech backdrop (`DynamicBackground`) with mouse-follow glow; tokens differ per theme (ADR-004)
+- **One** Leptos route tree and **one** site chrome (fixed header + content + footer)
+- Appearance: **`dark` only** — no light theme in production UI, no theme switch
+- Reflect via `data-theme="dark"` on `html` / `body` / `.site-root` (SSR shell hard-coded)
+- Thaw UI: `Theme::dark()` via `SitePreference`; no `localStorage` theme key
+- Dynamic calm-tech backdrop (`DynamicBackground`) with mouse-follow glow; tokens in ADR-004
+- Layout: flex column root; `.site-main` offsets fixed header with `padding-top: var(--site-header-h)`; footer stays visible via `flex-shrink: 0`
 
 ## Consequences
 
-- Terminal CLI, `StyleMode`, and related commands/session history are removed
+- Terminal CLI, `StyleMode`, `ThemeControls`, and related commands/session history are removed
 - ADR-010 is superseded
 - Nav lives only in the header for all pages
+- Light token block in `style/tokens.css` may remain for `docs/palette-preview.html` only — not wired to the live site

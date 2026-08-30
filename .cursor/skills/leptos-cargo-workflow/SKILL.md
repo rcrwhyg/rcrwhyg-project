@@ -53,7 +53,7 @@ Ship **musl binary + `site/`**. Do not treat glibc host binaries as the producti
 
 Copy `.env.example` → `.env`. Never commit `.env`.
 
-Local Postgres: set `DATABASE_URL` for `cargo leptos watch` **and** soft-gated DB tests (same pool config story). Apply `sql/posts.sql` (+ `sql/seed_posts.sql`) once.
+Local Postgres: set `DATABASE_URL` for `cargo leptos watch` **and** soft-gated DB tests (same pool config story). Apply `sql/auth.sql` for admin sessions. `sql/posts.sql` is legacy.
 
 ## Notes
 

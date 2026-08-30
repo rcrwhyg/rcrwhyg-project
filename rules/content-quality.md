@@ -37,11 +37,11 @@
 3. 迭代至通过审核，状态更新到 `articles/README.md`
 4. 用用户指定的公众号工具排版发布；发布后记录日期与链接到 `articles/README.md`
 
-## 与站点博客（posts）的关系
+## 与站点文章系统的关系
 
-- 站点博客以 `posts`（数据库 + `/admin`）为唯一事实源（见 `.cursor/rules/rcrwhyg.mdc`）
-- `articles/` 是**公众号渠道稿**，可以改写自博客文章，但两者独立维护，不强制同步
-- 同一素材两边发布时，公众号版需按本规范适配排版与参考资料格式
+- 站点**唯一**事实源是 `articles/`（git + CD + `/articles` 渲染），见 [docs/architecture.md](../docs/architecture.md)
+- 本规范同时约束个人网站首发稿与公众号转载稿的 Markdown 质量
+- 公众号版可按排版需要微调，但 canonical 副本始终在仓库 `articles/` 内维护
 
 ---
 *随项目演进更新。*

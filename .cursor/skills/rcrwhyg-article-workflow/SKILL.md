@@ -11,14 +11,15 @@ description: Guides article creation for rcrwhyg — template, static gates, rev
 
 ## 快速流程
 
-1. 新建 `articles/NN-slug.md`（复制 `articles/templates/standard-template.md`）
-2. 摘要行固定格式：`> **摘要**: …`（150–200 字）
-3. 「## 参考资料」章节：`资料名称：完整URL`，**禁止** Markdown 超链接
-4. 结尾含「**版本信息**」与「**版权声明**」两行
-5. 自检：`./tools/check-articles.sh`（pre-commit/pre-push 也会跑）
-6. `content:` 前缀提交；状态更新 `articles/README.md`
-7. 用户审核，意见记 `docs/article-reviews.md`
-8. 用户确认为最终版后，自行决定是否转载到微信公众号【如春日午后阳光】（用其指定工具，可加"阅读原文"指向个人网站 permalink）
+1. 在 `articles/<合集>/` 或根目录新建 `NN-slug.md`（复制 `articles/templates/standard-template.md`）
+2. 合集目录加 `_meta.json`：`{ "title": "合集名", "order": 1 }`
+3. 摘要行固定格式：`> **摘要**: …`（150–200 字）
+4. 「## 参考资料」章节：`资料名称：完整URL`，**禁止** Markdown 超链接
+5. 结尾含「**版本信息**」与「**版权声明**」两行
+6. 自检：`./tools/check-articles.sh`（递归扫描 `articles/**/*.md`；pre-commit/pre-push 也会跑）
+7. `content:` 前缀提交；状态更新 `articles/README.md`
+8. 用户审核，意见记 `docs/article-reviews.md`
+9. 用户确认为最终版后，自行决定是否转载到微信公众号【如春日午后阳光】（用其指定工具，可加"阅读原文"指向个人网站 permalink）
 
 ## 硬规则
 

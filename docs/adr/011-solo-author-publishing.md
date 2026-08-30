@@ -2,11 +2,13 @@
 
 ## Status
 
-Accepted (login shell + CLI bootstrap + post CRUD)
+Accepted — admin session + CLI bootstrap; **publishing via `articles/` git workflow** (no DB post CRUD)
 
 ## Context
 
-A personal site needs a secure write path for its owner. Patterns are borrowed from the owner's prior Axum chat app (Argon2id), but transport is **server-side sessions in Postgres + HttpOnly cookies**, not long-lived Bearer JWT.
+A personal site needs a secure owner path. Auth patterns from prior Axum work (Argon2id); transport is **Postgres sessions + HttpOnly cookies**.
+
+Publishing is **file-based**: `articles/<合集>/NN-slug.md` (or root-level essays) → git → CD → `/articles`. Browser admin is for ops/login shell, not WYSIWYG editing.
 
 ## Decisions
 
@@ -14,30 +16,21 @@ A personal site needs a secure write path for its owner. Patterns are borrowed f
 |-------|--------|
 | Sessions | `admin_sessions` table; cookie holds raw token; DB stores SHA-256 hex |
 | Cookie | `HttpOnly`, `SameSite=Strict`, `Path=/`; `Secure` when `COOKIE_SECURE=true` or `LEPTOS_ENV=PROD` |
-| Admin bootstrap | **CLI only**: `create-admin` on the server shell (no public web setup) |
-| Entry | `/admin` (+ `/admin/login`); not linked in public nav |
+| Admin bootstrap | **CLI only**: `create-admin` on server shell |
+| Entry | `/admin` + `/admin/login`; header shows **后台** / **退出** when logged in |
 | Password | Argon2id; min length 12 |
-| TLS | Provided by Caddy in production — app does not manage certs |
-| Rate limit | **Public site** per-IP global limiter + **stricter auth** limiter (login) |
-| Publishing | Authenticated CRUD under `/admin/posts` |
-
-## Rate limiting
-
-- Middleware on all Axum traffic (except `/health`)
-- IP from `X-Forwarded-For` / `X-Real-IP` (Caddy) or peer addr
-- Env: `RATE_LIMIT_PUBLIC_PER_MIN` (default 180), `RATE_LIMIT_AUTH_PER_MIN` (default 8)
-- Auth server fns also check the auth limiter
-
-## Schema
-
-See `sql/auth.sql` (`admins`, `admin_sessions`).
+| Publishing | Edit `articles/`, run CI/CD — **not** `/admin/posts` |
+| Collections | Subdir + `_meta.json` (`title`, optional `placeholder`); slug from filename |
+| Rate limit | Public site limiter + stricter auth limiter on login |
 
 ## Bootstrap (ops)
 
 ```bash
-# After sql/auth.sql is applied, on the machine that can reach DATABASE_URL:
 cargo run --features ssr --bin create-admin -- you@example.com 'at-least-12-chars'
-# production: ship the create-admin binary (or run once via SSH against the same DB)
 ```
 
-Fails if an admin already exists. Password never crosses a public bootstrap form.
+Fails if an admin already exists.
+
+## Schema
+
+See `sql/auth.sql`. `sql/posts.sql` is legacy — do not use for new content.

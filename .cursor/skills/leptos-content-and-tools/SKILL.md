@@ -1,6 +1,6 @@
 ---
 name: leptos-content-and-tools
-description: Guides diversified site areas, posts model, tool registry, and Markdown export/import for rcrwhyg. Use when adding a new site section/area, blog posts, tools, registry entries, ContentExporter/Importer, or when the user mentions posts, tools, gallery, notes, export, or import.
+description: Guides diversified site areas, articles model, tool registry, and Markdown export/import for rcrwhyg. Use when adding a new site section/area, articles, tools, registry entries, ContentExporter/Importer, or when the user mentions articles, collections, tools, gallery, notes, export, or import.
 ---
 
 # Content, tools, and site areas
@@ -17,22 +17,21 @@ Checklist for a new area:
 4. Nav: header links in `SiteHeader` (`src/app/layout.rs`)
 5. Optional registry entry (mirror `tools/registry.rs`; planned `areas` registry)
 
-## Posts
+## Articles (canonical content)
 
-- Source of truth: `domain::Post` + `sql/posts.sql` (+ optional `sql/seed_posts.sql`)
-- Server fns: `list_published_posts`, `get_post_by_slug` in `src/server/posts.rs`
-- DB helpers `fetch_*(&PgPool)` are shared with soft-gated integration tests
-- No DB / empty table → fall back to `domain::seed_posts`
-- Detail HTML is rendered on the server with `pulldown-cmark` (ssr-only)
-- Routes: `/blog`, `/blog/:slug`
-- **Write/publish path**: solo admin via session cookie (ADR-011); create admin with `create-admin` CLI, then `/admin/login` + `/admin/posts`
-- Rate limits: public + auth (see `docs/testing.md` / ADR-011)
-- Do not extend `sql/articles.sql` (legacy)
-- No WeChat/platform sync unless explicitly requested
+- Source of truth: `articles/` in git — collection subdirs with `_meta.json` + `NN-slug.md`, or root-level essays
+- Server: `src/server/articles.rs` — recursive scan, Markdown → HTML via `src/server/markdown.rs` (ssr-only)
+- Routes: `/articles`, `/articles/:slug`; legacy `/blog` → 308 redirect
+- Deploy: CD tars entire `articles/` tree into site root (see ADR-012)
+- Exclude from index: `README.md`, `templates/`, non-`NN-slug` names, `> **站点发布**: 否`
+- Sort: file number desc → date desc → slug
+- **Write/publish path**: edit files in repo → CI → CD; admin session is ops-only (ADR-011)
+- Do not extend `sql/posts.sql` or `sql/articles.sql` (legacy)
+- WeChat repost is user-managed; AI does not publish externally
 
 ## Testing (content)
 
-See [docs/testing.md](../../../docs/testing.md). New post queries / mutate APIs must add unit and (when DB) integration coverage.
+See [docs/testing.md](../../../docs/testing.md). New article parsing / listing logic should add unit coverage where practical.
 
 ## Export / import
 

@@ -2,10 +2,10 @@
 
 ## Status
 
-**Superseded** by ADR-003 (single chrome + dark/light only).
+**Superseded** by ADR-003 (single chrome + fixed dark theme).
 
 ## Reason
 
-Terminal / dual-shell mode was removed to simplify UX. The site keeps a single modern chrome and calm-tech backdrop with dark/light themes.
+Terminal / dual-shell mode was removed to simplify UX. The site keeps a single modern chrome and calm-tech backdrop with a fixed dark theme.
 
 Do not reintroduce Terminal mode unless a new ADR explicitly revives it.

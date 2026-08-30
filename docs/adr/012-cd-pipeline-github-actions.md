@@ -22,12 +22,8 @@ Add a second workflow, `.github/workflows/cd.yml`, that:
 - **Builds** with the same toolchain + cache combo as CI, plus
   `cargo install --locked cargo-leptos` and
   `cargo install --locked cargo-zigbuild`.
-- **Deploys** by streaming the built binary and `target/site/` to the
-  VPS via `appleboy/scp-action@v1` and `appleboy/ssh-action@v1`. The
-  swap logic lives in a version-controlled `deploy/remote.sh` that is
-  SCP'd alongside the binary, so deploys are atomic and reproducible.
-- **Smoke tests** `/health` and `/` over SSH (the runner can't reach
-  `127.0.0.1:3000` on the VPS).
+- **Deploys** by streaming the built binary, `target/site/`, and content dirs (`articles/`, `data/`, `content/`) to the VPS via `scp` + `ssh`. The swap logic lives in `deploy/remote.sh`.
+- **Smoke tests** `/health`, `/`, and `/articles` on the VPS over SSH.
 - **Finalizes** by writing a TSV line to `/opt/rcrwhyg/var/deploy.log`
   (date, tag, sha, actor, reason) and pruning old `site.prev.*`
   directories (keep last 3).
