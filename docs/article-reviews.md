@@ -16,4 +16,8 @@
 
 ---
 
-（暂无审核记录。）
+## 2026-08-30 《AI 协作的工程教训：把 5 轮 UI 调优做成 deploy-gating + 透明度模型》（`articles/06-ai-collab-engineering-lessons.md`）
+- 审核轮次: 待提交
+- 审核人: —
+- 结论: 待用户 review
+- 意见: —
